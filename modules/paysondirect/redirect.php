@@ -88,12 +88,10 @@ $callPaysonApi->setCustomer(new PaysonEmbedded\Customer(
         $customer->lastname,
         $customer->email,
         $address->phone,
-        //$customer->birthday,
-        '4605092222',
+        $customer->birthday,
         $address->city, 
         $address->country, 
-        //$address->postcode, 
-        '99999',
+        $address->postcode, 
         $address->address1)
 );
 
