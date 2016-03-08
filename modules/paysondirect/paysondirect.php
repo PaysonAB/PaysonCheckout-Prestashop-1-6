@@ -563,7 +563,7 @@ class Paysondirect extends PaymentModule {
                         $address->address2 = '';
                         $address->city = $callPaysonApi->getResponsObject()->customer->city;
                         $address->postcode = $callPaysonApi->getResponsObject()->customer->postalCode;
-                        $address->country = $callPaysonApi->getResponsObject()->customer->countryCode
+                        $address->country = $callPaysonApi->getResponsObject()->customer->countryCode;
                         $address->id_customer = $cart->id_customer;
                         $address->alias = "Payson account address";
                         $address->update();
