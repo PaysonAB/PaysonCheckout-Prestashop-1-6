@@ -18,10 +18,6 @@ $paysonShop['EN']['check_out_w_payson'] = 'Checkout with Payson';
 $paysonShop['SV']['check_out_w_payson'] = 'Betala med Payson';
 $paysonShop['FI']['check_out_w_payson'] = 'Betala med Payson';
 
-$paysonShop['EN']['read_more_link'] = '<a href="' . $paysonInfoLink . '" target="_blank">Read more</a>';
-$paysonShop['SV']['read_more_link'] = '<a href="' . $paysonInfoLink . '" target="_blank">Läs mer</a>';
-$paysonShop['FI']['read_more_link'] = '<a href="' . $paysonInfoLink . '" target="_blank">Läs mer</a>';
-
 $paysonShop['EN']['order_id_from_text'] = 'Order: %s from ';
 $paysonShop['SV']['order_id_from_text'] = 'Order: %s från ';
 $paysonShop['FI']['order_id_from_text'] = 'Order: %s från ';
@@ -54,14 +50,6 @@ $paysonAdmin['EN']['inv_text_catalog_title'] = "Payson Invoice";
 $paysonAdmin['SV']['inv_text_catalog_title'] = "Payson Faktura";
 $paysonAdmin['FI']['inv_text_catalog_title'] = "Payson Faktura";
 
-
-$paysonAdmin['EN']['config_instruction1'] = '<strong>Payson</strong><br /><a href="' . $paysonSignInLink . '" target="_blank">Manage your Payson account.</a><br /><br /><font color="green">Configuration Instructions:</font><br />
-  1. <a href="' . $paysonSignUpLink . '" target="_blank">Sign up for your Payson account - click here.</a><br />';
-$paysonAdmin['SV']['config_instruction1'] = '<strong>Payson</strong><br /><a href="' . $paysonSignInLink . '" target="_blank">Hantera ditt Paysonkonto.</a><br /><br /><font color="green">Konfigureringsinstruktioner:</font><br />
-  1. <a href="' . $paysonSignUpLink . '" target="_blank">Skapa ditt Paysonkonto - klicka här.</a><br />';
-$paysonAdmin['SV']['config_instruction1'] = '<strong>Payson</strong><br /><a href="' . $paysonSignInLink . '" target="_blank">Hantera ditt Paysonkonto.</a><br /><br /><font color="green">Konfigureringsinstruktioner:</font><br />
-  1. <a href="' . $paysonSignUpLink . '" target="_blank">Skapa ditt Paysonkonto - klicka här.</a><br />';
-
 $paysonAdmin['EN']['config_instruction2'] = '2. ...and click "install" above to enable Payson support... and "edit" your Payson settings.';
 $paysonAdmin['SV']['config_instruction2'] = '2. ...och klicka "install" ovan för att aktivera Payson support... och "edit" dina Paysoninställningar.';
 $paysonAdmin['FI']['config_instruction2'] = '2. ...och klicka "install" ovan för att aktivera Payson support... och "edit" dina Paysoninställningar.';
@@ -70,10 +58,6 @@ $paysonAdmin['FI']['config_instruction2'] = '2. ...och klicka "install" ovan fö
 $paysonAdmin['EN']['config_instruction2_vm'] = '2. ...and fill in form below to enable Payson support... and "save" your Payson settings.';
 $paysonAdmin['SV']['config_instruction2_vm'] = '2. ...och fyll i formulär nedan för att aktivera Payson support... och "spara" dina Paysoninställningar.';
 $paysonAdmin['FI']['config_instruction2_vm'] = '2. ...och fyll i formulär nedan för att aktivera Payson support... och "spara" dina Paysoninställningar.';
-
-$paysonAdmin['EN']['config_instruction3'] = '</ul><font color="green"><hr /><strong>Requirements:</strong></font><br /><hr />*<strong>Payson Account</strong> (<a href="' . $paysonSignUpLink . '" target="_blank">click to signup</a>)<br />*<strong>*<strong>Port 80</strong> is used for bidirectional communication with the gateway, so must be open on your host\'s router/firewall<br />*<strong>Settings</strong> must be configured as described above.';
-$paysonAdmin['SV']['config_instruction3'] = '</ul><font color="green"><hr /><strong>Krav:</strong></font><br /><hr />*<strong>Paysonkonto</strong> (<a href="' . $paysonSignUpLink . '" target="_blank">klicka här för att skapa</a>)<br />*<strong>*<strong>Port 80</strong> används för dubbelriktad kommunikation med Paysons server, så den måste vara öppen i din host\'s router/firewall<br />*<strong>Inställningar</strong> måste konfigureras enligt ovan beskrivet.';
-$paysonAdmin['FI']['config_instruction3'] = '</ul><font color="green"><hr /><strong>Krav:</strong></font><br /><hr />*<strong>Paysonkonto</strong> (<a href="' . $paysonSignUpLink . '" target="_blank">klicka här för att skapa</a>)<br />*<strong>*<strong>Port 80</strong> används för dubbelriktad kommunikation med Paysons server, så den måste vara öppen i din host\'s router/firewall<br />*<strong>Inställningar</strong> måste konfigureras enligt ovan beskrivet.';
 
 $paysonAdmin['EN']['accept_payson'] = 'Do you want to accept Payson payments?';
 $paysonAdmin['SV']['accept_payson'] = 'Vill du ta emot betalningar med Payson?';
