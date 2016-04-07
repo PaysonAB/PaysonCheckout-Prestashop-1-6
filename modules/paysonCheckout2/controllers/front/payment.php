@@ -1,5 +1,5 @@
 <?php
-class PaysondirectPaymentModuleFrontController extends ModuleFrontController {
+class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController {
 
     public $ssl = true;
     public $display_column_left = false;
@@ -24,12 +24,12 @@ class PaysondirectPaymentModuleFrontController extends ModuleFrontController {
                     //'checkoutId' => $this->module->getPaysonResponsR(),
                     'isoCode' => $this->context->language->iso_code,
                     'this_path' => $this->module->getPathUri(),
-                    'this_path_paysondirect' => $this->module->getPathUri(),
+                    'this_path_paysonCheckout2' => $this->module->getPathUri(),
                     'this_path_ssl' => Tools::getShopDomainSsl(true, true) . __PS_BASE_URI__ . 'modules/' . $this->module->name . '/'
                 )
         );
 
-        $this->setTemplate('paysondirect_execution.tpl');
+        $this->setTemplate('paysonCheckout2_execution.tpl');
     }
 
 }

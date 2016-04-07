@@ -4,9 +4,9 @@ if (!isset($_SESSION)) {
     session_start();
 }
 
-//include_once(_PS_MODULE_DIR_ . 'paysondirect/payson/paysonapi.php');
+//include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/payson/paysonapi.php');
 
-class Paysondirect extends PaymentModule {
+class PaysonCheckout2 extends PaymentModule {
 
     private $_html = '';
     private $_postErrors = array();
@@ -17,9 +17,9 @@ class Paysondirect extends PaymentModule {
     private $checkoutId;
 
     public function __construct() {
-        $this->name = 'paysondirect';
+        $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0.0';
+        $this->version = '1.0.0.1';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -32,25 +32,24 @@ class Paysondirect extends PaymentModule {
         parent::__construct();
 
         $this->page = basename(__FILE__, '.php');
-        $this->displayName = $this->l('Payson');
+        $this->displayName = $this->l('Paysoncheckout2.0');
         $this->confirmUninstall = $this->l('Are you sure you want to delete your details?');
     }
 
     public function install() {
-        include_once(_PS_MODULE_DIR_ . 'paysondirect/payson_api/def.payson.php');
+        include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/payson_api/def.payson.php');
 
         Db::getInstance()->execute($this->paysonCreateTransOrderEventsTableQuery($paysonDbTableOrderEembedded));
 
-        $orderStates = Db::getInstance()->executeS("SELECT id_order_state FROM " . _DB_PREFIX_ . "order_state WHERE module_name='paysondirect'");
+        $orderStates = Db::getInstance()->executeS("SELECT id_order_state FROM " . _DB_PREFIX_ . "order_state WHERE module_name='paysonCheckout2'");
         $paysonPaidId = '';
 
         if (!$orderStates) {
             $db = Db::getInstance();
             $db->insert("order_state", array(
-                "id_order_state" => 16,
                 "invoice" => "1",
                 "send_email" => "1",
-                "module_name" => "paysondirect",
+                "module_name" => "paysonCheckout2",
                 "color" => "Orange",
                 "unremovable" => "1",
                 "hidden" => "0",
@@ -72,7 +71,7 @@ class Paysondirect extends PaymentModule {
                         $db->insert('order_state_lang', array(
                             "id_order_state" => pSQL($paysonPaidId),
                             "id_lang" => pSQL($language['id_lang']),
-                            "name" => "Betald med Payson",
+                            "name" => "Betald med Payson Checkout 2.0",
                             "template" => "payment"
                         ));
                         break;
@@ -82,7 +81,7 @@ class Paysondirect extends PaymentModule {
                         $db->insert('order_state_lang', array(
                             "id_order_state" => pSQL($paysonPaidId),
                             "id_lang" => pSQL($language['id_lang']),
-                            "name" => "Paid with Payson",
+                            "name" => "Paid with Payson Checkout 2.0",
                             "template" => "payment"
                         ));
                         break;
@@ -92,7 +91,7 @@ class Paysondirect extends PaymentModule {
                         $db->insert('order_state_lang', array(
                             "id_order_state" => pSQL($paysonPaidId),
                             "id_lang" => pSQL($language['id_lang']),
-                            "name" => "Maksettu Paysonilla",
+                            "name" => "Maksettu Payson Checkout 2.0",
                             "template" => "payment"
                         ));
                         break;
@@ -100,31 +99,31 @@ class Paysondirect extends PaymentModule {
             }
 
             // Add the payson logotype to the order status folder
-            copy(_PS_MODULE_DIR_ . "paysondirect/logo.gif", "../img/os/" . $paysonPaidId . ".gif");
+            copy(_PS_MODULE_DIR_ . "paysonCheckout2/logo.gif", "../img/os/" . $paysonPaidId . ".gif");
         } else {
             foreach ($orderStates as $orderState) {
                 $paysonPaidId = $orderState['id_order_state'];
-                copy(_PS_MODULE_DIR_ . "paysondirect/logo.gif", "../img/os/" . $paysonPaidId . ".gif");
+                copy(_PS_MODULE_DIR_ . "paysonCheckout2/logo.gif", "../img/os/" . $paysonPaidId . ".gif");
             }
         }
 
         if (!parent::install()
-                OR ! Configuration::updateValue("PAYSON_ORDER_STATE_PAID", $paysonPaidId)
-                OR ! Configuration::updateValue('PAYSON_MERCHANTID', '')
-                OR ! Configuration::updateValue('PAYSON_APIKEY', '')
-                OR ! Configuration::updateValue('PAYSON_SANDBOX_MERCHANTID', '4')
-                OR ! Configuration::updateValue('PAYSON_SANDBOX_APIKEY', '2acab30d-fe50-426f-90d7-8c60a7eb31d4')
-                OR ! Configuration::updateValue('PAYSON_MODE', 'sandbox')
-                OR ! Configuration::updateValue('PAYSON_MODULE_VERSION', 'PAYSON-CHECKOUT2-PRESTASHOP-' . $this->version)
-                OR ! Configuration::updateValue('PAYSON_RECEIPT', '0')
-                OR ! Configuration::updateValue('PAYSON_LOGS', 'no')
-                OR ! Configuration::updateValue('PAYSON_VERIFICATION', 'none')
-                OR ! Configuration::updateValue('PAYSON_COLOR_SCHEME', 'gray')
-                OR ! Configuration::updateValue('PAYSON_IFRAME_SIZE_WIDTH', '100')
-                OR ! Configuration::updateValue('PAYSON_IFRAME_SIZE_WIDTH_TYPE', '%')
-                OR ! Configuration::updateValue('PAYSON_IFRAME_SIZE_HEIGHT', '700')
-                OR ! Configuration::updateValue('PAYSON_IFRAME_SIZE_HEIGHT_TYPE', 'px')
-                OR ! Configuration::updateValue('PAYSON_REQUEST_PHONE', '0')
+                OR ! Configuration::updateValue("PAYSONCHECKOUT2_ORDER_STATE_PAID", $paysonPaidId)
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_MERCHANTID', '')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_APIKEY', '')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_SANDBOX_MERCHANTID', '4')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_SANDBOX_APIKEY', '2acab30d-fe50-426f-90d7-8c60a7eb31d4')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_MODE', 'sandbox')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_MODULE_VERSION', 'PAYSONCHECKOUT2-PRESTASHOP-' . $this->version)
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_RECEIPT', '0')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_LOGS', 'no')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_VERIFICATION', 'none')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_COLOR_SCHEME', 'gray')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', '100')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE', '%')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', '700')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE', 'px')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_REQUEST_PHONE', '0')
                 OR ! $this->registerHook('payment')
                 OR ! $this->registerHook('paymentReturn'))
             return false;
@@ -134,30 +133,29 @@ class Paysondirect extends PaymentModule {
     public function uninstall() {
 
         return (parent::uninstall() AND
-                Configuration::deleteByName('PAYSON_MERCHANTID') AND
-                Configuration::deleteByName('PAYSON_APIKEY') AND
-                Configuration::deleteByName('PAYSON_SANDBOX_MERCHANTID') AND
-                Configuration::deleteByName('PAYSON_SANDBOX_APIKEY') AND
-                Configuration::deleteByName('PAYSON_MODE') AND
-                Configuration::deleteByName('PAYSON_MODULE_VERSION') AND
-                Configuration::deleteByName('PAYSON_RECEIPT') AND
-                Configuration::deleteByName('PAYSON_LOGS') AND
-                Configuration::deleteByName('PAYSON_VERIFICATION') AND
-                Configuration::deleteByName('PAYSON_COLOR_SCHEME') AND
-                Configuration::deleteByName('PAYSON_IFRAME_SIZE_WIDTH') AND
-                Configuration::deleteByName('PAYSON_IFRAME_SIZE_WIDTH_TYPE') AND
-                Configuration::deleteByName('PAYSON_IFRAME_SIZE_HEIGHT') AND
-                Configuration::deleteByName('PAYSON_IFRAME_SIZE_HEIGHT_TYPE') AND
-                Configuration::deleteByName('PAYSON_REQUEST_PHONE') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_MERCHANTID') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_APIKEY') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_SANDBOX_MERCHANTID') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_SANDBOX_APIKEY') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_MODE') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_MODULE_VERSION') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_RECEIPT') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_LOGS') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_VERIFICATION') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_COLOR_SCHEME') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE') AND
+                Configuration::deleteByName('PAYSONCHECKOUT2_REQUEST_PHONE') AND
                 Configuration::deleteByName('paysonpay') AND
-                Configuration::deleteByName('PAYSON_INVOICE_ENABLED') AND
-                Configuration::deleteByName("PAYSON_ORDER_STATE_PAID"));
+                Configuration::deleteByName('PAYSONCHECKOUT2_INVOICE_ENABLED'));
     }
 
     public function getContent() {
         $this->_html = '<h2>' . $this->l('Payson') . '</h2>';
         if (isset($_POST['submitPayson'])) {
-            if (Configuration::get('PAYSON_MODE') != 'sandbox') {
+            if (Configuration::get('PAYSONCHECKOUT2_MODE') != 'sandbox') {
                 if (empty($_POST['APIKEY']))
                     $this->_postErrors[] = $this->l('Payson API-Key is required.');
                 if (empty($_POST['merchantid']))
@@ -166,36 +164,36 @@ class Paysondirect extends PaymentModule {
 
             $mode = Tools::getValue('payson_mode');
             if ($mode == 'real' ? 'real' : 'sandbox')
-                Configuration::updateValue('PAYSON_MODE', $mode);
+                Configuration::updateValue('PAYSONCHECKOUT2_MODE', $mode);
 
             $verification = Tools::getValue('payson_verification');
             if ($verification == 'bankid' ? 'bankid' : 'none')
-                Configuration::updateValue('PAYSON_VERIFICATION', $verification);
+                Configuration::updateValue('PAYSONCHECKOUT2_VERIFICATION', $verification);
 
             $colorScheme = Tools::getValue('payson_color_scheme');
-            Configuration::updateValue('PAYSON_COLOR_SCHEME', $colorScheme);
+            Configuration::updateValue('PAYSONCHECKOUT2_COLOR_SCHEME', $colorScheme);
 
             $logPayson = Tools::getValue('payson_log');
             if ($logPayson == 'yes' ? 'yes' : 'no')
-                Configuration::updateValue('PAYSON_LOGS', $logPayson);
+                Configuration::updateValue('PAYSONCHECKOUT2_LOGS', $logPayson);
 
             if (!sizeof($this->_postErrors)) {
-                Configuration::updateValue('PAYSON_MERCHANTID', intval($_POST['merchantid']));
-                Configuration::updateValue('PAYSON_APIKEY', strval($_POST['apikey']));
-                Configuration::updateValue('PAYSON_IFRAME_SIZE_WIDTH', strval($_POST['iframeSizeWidth']));
-                Configuration::updateValue('PAYSON_IFRAME_SIZE_WIDTH_TYPE', strval($_POST['iframeSizeWidthType']));
-                Configuration::updateValue('PAYSON_IFRAME_SIZE_HEIGHT', strval($_POST['iframeSizeHeight']));
-                Configuration::updateValue('PAYSON_IFRAME_SIZE_HEIGHT_TYPE', strval($_POST['iframeSizeHeightType']));
+                Configuration::updateValue('PAYSONCHECKOUT2_MERCHANTID', intval($_POST['merchantid']));
+                Configuration::updateValue('PAYSONCHECKOUT2_APIKEY', strval($_POST['apikey']));
+                Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', strval($_POST['iframeSizeWidth']));
+                Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE', strval($_POST['iframeSizeWidthType']));
+                Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', strval($_POST['iframeSizeHeight']));
+                Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE', strval($_POST['iframeSizeHeightType']));
 
                 if (!isset($_POST['enableReceipt']))
-                    Configuration::updateValue('PAYSON_RECEIPT', '0');
+                    Configuration::updateValue('PAYSONCHECKOUT2_RECEIPT', '0');
                 else
-                    Configuration::updateValue('PAYSON_RECEIPT', strval($_POST['enableReceipt']));
+                    Configuration::updateValue('PAYSONCHECKOUT2_RECEIPT', strval($_POST['enableReceipt']));
 
                 if (!isset($_POST['enableRequestPhone']))
-                    Configuration::updateValue('PAYSON_REQUEST_PHONE', '0');
+                    Configuration::updateValue('PAYSONCHECKOUT2_REQUEST_PHONE', '0');
                 else
-                    Configuration::updateValue('PAYSON_REQUEST_PHONE', strval($_POST['enableRequestPhone']));
+                    Configuration::updateValue('PAYSONCHECKOUT2_REQUEST_PHONE', strval($_POST['enableRequestPhone']));
 
                 $this->displayConf();
             } else
@@ -230,12 +228,12 @@ class Paysondirect extends PaymentModule {
 
     public function displayPayson() {
         global $cookie;
-        include_once(_PS_MODULE_DIR_ . 'paysondirect/payson_api/def.payson.php');
+        include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/payson_api/def.payson.php');
 
 
         $this->_html .= '
-		<img src="../modules/paysondirect/payson.png" style="float:left; margin-right:15px;" /><br/>
-		<b>' . $this->l('This module allows you to accept payments by Payson.') . '</b><br /><br />
+		<img src="../modules/paysonCheckout2/payson.png" style="float:left; margin-right:15px;" /><br/>
+		<b>' . $this->l('This module allows you to accept payments by Payson Checkout 2.0.') . '</b><br /><br />
 		' . $this->l('You need to apply for and be cleared for payments by Payson before using this module.') . '
 		<br /><br /><br />';
     }
@@ -243,28 +241,28 @@ class Paysondirect extends PaymentModule {
     public function displayFormSettings() {
 
         $conf = Configuration::getMultiple(array(
-                    'PAYSON_MERCHANTID',
-                    'PAYSON_APIKEY',
+                    'PAYSONCHECKOUT2_MERCHANTID',
+                    'PAYSONCHECKOUT2_APIKEY',
                     'paysonpay',
-                    'PAYSON_RECEIPT',
-                    'PAYSON_REQUEST_PHONE',
-                    'PAYSON_IFRAME_SIZE_WIDTH',
-                    'PAYSON_IFRAME_SIZE_WIDTH_TYPE',
-                    'PAYSON_IFRAME_SIZE_HEIGHT',
-                    'PAYSON_IFRAME_SIZE_HEIGHT_TYPE'
+                    'PAYSONCHECKOUT2_RECEIPT',
+                    'PAYSONCHECKOUT2_REQUEST_PHONE',
+                    'PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH',
+                    'PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE',
+                    'PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT',
+                    'PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'
         ));
 
-        $payson_mode_text = 'Currently using ' . Configuration::get('PAYSON_MODE') . ' mode.';
+        $payson_mode_text = 'Currently using ' . Configuration::get('PAYSONCHECKOUT2_MODE') . ' mode.';
 
-        $merchantid = array_key_exists('merchantid', $_POST) ? $_POST['merchantid'] : (array_key_exists('PAYSON_MERCHANTID', $conf) ? $conf['PAYSON_MERCHANTID'] : '');
-        $apikey = array_key_exists('apikey', $_POST) ? $_POST['apikey'] : (array_key_exists('PAYSON_APIKEY', $conf) ? $conf['PAYSON_APIKEY'] : '');
-        $iframeSizeWidth = array_key_exists('iframeSizeWidth', $_POST) ? $_POST['iframeSizeWidth'] : (array_key_exists('PAYSON_IFRAME_SIZE_WIDTH', $conf) ? $conf['PAYSON_IFRAME_SIZE_WIDTH'] : '');
-        $iframeSizeWidthType = array_key_exists('iframeSizeWidthType', $_POST) ? $_POST['iframeSizeWidthType'] : (array_key_exists('PAYSON_IFRAME_SIZE_WIDTH_TYPE', $conf) ? $conf['PAYSON_IFRAME_SIZE_WIDTH_TYPE'] : '');
-        $iframeSizeHeight = array_key_exists('iframeSizeHeight', $_POST) ? $_POST['iframeSizeHeight'] : (array_key_exists('PAYSON_IFRAME_SIZE_HEIGHT', $conf) ? $conf['PAYSON_IFRAME_SIZE_HEIGHT'] : '');
-        $iframeSizeHeightType = array_key_exists('iframeSizeHeightType', $_POST) ? $_POST['iframeSizeHeightType'] : (array_key_exists('PAYSON_IFRAME_SIZE_HEIGHT_TYPE', $conf) ? $conf['PAYSON_IFRAME_SIZE_HEIGHT_TYPE'] : '');
+        $merchantid = array_key_exists('merchantid', $_POST) ? $_POST['merchantid'] : (array_key_exists('PAYSONCHECKOUT2_MERCHANTID', $conf) ? $conf['PAYSONCHECKOUT2_MERCHANTID'] : '');
+        $apikey = array_key_exists('apikey', $_POST) ? $_POST['apikey'] : (array_key_exists('PAYSONCHECKOUT2_APIKEY', $conf) ? $conf['PAYSONCHECKOUT2_APIKEY'] : '');
+        $iframeSizeWidth = array_key_exists('iframeSizeWidth', $_POST) ? $_POST['iframeSizeWidth'] : (array_key_exists('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', $conf) ? $conf['PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'] : '');
+        $iframeSizeWidthType = array_key_exists('iframeSizeWidthType', $_POST) ? $_POST['iframeSizeWidthType'] : (array_key_exists('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE', $conf) ? $conf['PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'] : '');
+        $iframeSizeHeight = array_key_exists('iframeSizeHeight', $_POST) ? $_POST['iframeSizeHeight'] : (array_key_exists('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', $conf) ? $conf['PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'] : '');
+        $iframeSizeHeightType = array_key_exists('iframeSizeHeightType', $_POST) ? $_POST['iframeSizeHeightType'] : (array_key_exists('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE', $conf) ? $conf['PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'] : '');
 
-        $enableReceipt = array_key_exists('enableReceipt', $_POST) ? $_POST['enableReceipt'] : (array_key_exists('PAYSON_RECEIPT', $conf) ? $conf['PAYSON_RECEIPT'] : '0');
-        $enableRequestPhone = array_key_exists('enableRequestPhone', $_POST) ? $_POST['enableRequestPhone'] : (array_key_exists('PAYSON_REQUEST_PHONE', $conf) ? $conf['PAYSON_REQUEST_PHONE'] : '0');
+        $enableReceipt = array_key_exists('enableReceipt', $_POST) ? $_POST['enableReceipt'] : (array_key_exists('PAYSONCHECKOUT2_RECEIPT', $conf) ? $conf['PAYSONCHECKOUT2_RECEIPT'] : '0');
+        $enableRequestPhone = array_key_exists('enableRequestPhone', $_POST) ? $_POST['enableRequestPhone'] : (array_key_exists('PAYSONCHECKOUT2_REQUEST_PHONE', $conf) ? $conf['PAYSONCHECKOUT2_REQUEST_PHONE'] : '0');
         $this->_html .= '
 		<form action="' . $_SERVER['REQUEST_URI'] . '" method="post" style="clear: both;">
 		<fieldset>
@@ -277,28 +275,28 @@ class Paysondirect extends PaymentModule {
                     ' . $this->l('Select the mode (Real or Sandbox).') . '<br />
                     ' . $this->l('Mode:    ') . '
                     <select name="payson_mode">
-                                    <option value="real"' . (Configuration::get('PAYSON_MODE') == 'real' ? ' selected="selected"' : '') . '>' . $this->l('Real') . '&nbsp;&nbsp;</option>
-                                    <option value="sandbox"' . (Configuration::get('PAYSON_MODE') == 'sandbox' ? ' selected="selected"' : '') . '>' . $this->l('Sandbox') . '&nbsp;&nbsp;</option>
+                                    <option value="real"' . (Configuration::get('PAYSONCHECKOUT2_MODE') == 'real' ? ' selected="selected"' : '') . '>' . $this->l('Real') . '&nbsp;&nbsp;</option>
+                                    <option value="sandbox"' . (Configuration::get('PAYSONCHECKOUT2_MODE') == 'sandbox' ? ' selected="selected"' : '') . '>' . $this->l('Sandbox') . '&nbsp;&nbsp;</option>
                     </select><br />
                     <strong>' . $this->l($payson_mode_text) . '</strong><br /><br />
 
-                    ' . $this->l('Enter your merchant id for Paysondirect.') . '<br />
+                    ' . $this->l('Enter your merchant id for Payson Checkout 2.0') . '<br />
                     ' . $this->l('merchant id:    ') . '
                     <input type="text" size="45" name="merchantid" value="' . htmlentities($merchantid, ENT_COMPAT, 'UTF-8') . '" /><br /><br />
 
-                    ' . $this->l('Enter your API-Key for Paysondirect.') . '<br />
+                    ' . $this->l('Enter your API-Key for Payson Checkout 2.0') . '<br />
                     ' . $this->l('API-Key:    ') . '
                     <input type="text" size="45" name="apikey" value="' . htmlentities($apikey, ENT_COMPAT, 'UTF-8') . '" /><br /><br />
 
                     ' . $this->l('Show Receipt Page:    ') .
                 '<input type="checkbox" size="45" name="enableReceipt" value="1" ' . ($enableReceipt == "1" ? "checked=checked" : '') . '" /><br /><br />
 
-                    ' . $this->l('Troubleshoot response from Payson Direct.') . '<br />
+                    ' . $this->l('Troubleshoot response from Payson Checkout 2.0.') . '<br />
                     ' . $this->l('Logg:    ') . '
 
                     <select name="payson_log">
-                        <option value="yes"' . (Configuration::get('PAYSON_LOGS') == 'yes' ? ' selected="selected"' : '') . '>' . $this->l('Yes') . '&nbsp;&nbsp;</option>
-                        <option value="no"' . (Configuration::get('PAYSON_LOGS') == 'no' ? ' selected="selected"' : '') . '>' . $this->l('No') . '&nbsp;&nbsp;</option>
+                        <option value="yes"' . (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes' ? ' selected="selected"' : '') . '>' . $this->l('Yes') . '&nbsp;&nbsp;</option>
+                        <option value="no"' . (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'no' ? ' selected="selected"' : '') . '>' . $this->l('No') . '&nbsp;&nbsp;</option>
                     </select><br /><br />
                    
                     ' . $this->l('Graphical user interface:') . '<br /><br />
@@ -306,8 +304,8 @@ class Paysondirect extends PaymentModule {
                     ' . $this->l('Can be used to add extra customer verification') . '<br />
                     ' . $this->l('Verification:    ') . ' 
                     <select name="payson_verification">
-                        <option value="none"' . (Configuration::get('PAYSON_VERIFICATION') == 'none' ? ' selected="selected"' : '') . '>' . $this->l('None') . '&nbsp;&nbsp;</option>
-                        <option value="bankid"' . (Configuration::get('PAYSON_VERIFICATION') == 'bankid' ? ' selected="selected"' : '') . '>' . $this->l('Bankid') . '&nbsp;&nbsp;</option>
+                        <option value="none"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == 'none' ? ' selected="selected"' : '') . '>' . $this->l('None') . '&nbsp;&nbsp;</option>
+                        <!--<option value="bankid"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == 'bankid' ? ' selected="selected"' : '') . '>' . $this->l('Bankid') . '&nbsp;&nbsp;</option>-->
                     </select><br /><br />
                                     ' .
                 $this->l('Enable request phone:') .
@@ -315,20 +313,17 @@ class Paysondirect extends PaymentModule {
 
                     ' . $this->l('Color scheme:    ') . '			
                     <select name="payson_color_scheme">
-                        <option value="blue"' . (Configuration::get('PAYSON_COLOR_SCHEME') == 'blue' ? ' selected="selected"' : '') . '>' . $this->l('blue') . '&nbsp;&nbsp;</option>
-                        <option value="white"' . (Configuration::get('PAYSON_COLOR_SCHEME') == 'white' ? ' selected="selected"' : '') . '>' . $this->l('white') . '&nbsp;&nbsp;</option>
-                        <option value="gray"' . (Configuration::get('PAYSON_COLOR_SCHEME') == 'gray' ? ' selected="selected"' : '') . '>' . $this->l('gray') . '&nbsp;&nbsp;</option>
-                        <option value="graysemi"' . (Configuration::get('PAYSON_COLOR_SCHEME') == 'graysemi' ? ' selected="selected"' : '') . '>' . $this->l('graysemi') . '&nbsp;&nbsp;</option> 
-                        <option value="pitchblack"' . (Configuration::get('PAYSON_COLOR_SCHEME') == 'pitchblack' ? ' selected="selected"' : '') . '>' . $this->l('pitchblack') . '&nbsp;&nbsp;</option>
-                        <option value="bright"' . (Configuration::get('PAYSON_COLOR_SCHEME') == 'bright' ? ' selected="selected"' : '') . '>' . $this->l('bright') . '&nbsp;&nbsp;</option>  
+                        <option value="blue"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'blue' ? ' selected="selected"' : '') . '>' . $this->l('blue') . '&nbsp;&nbsp;</option>
+                        <option value="white"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'white' ? ' selected="selected"' : '') . '>' . $this->l('white') . '&nbsp;&nbsp;</option>
+                        <option value="gray"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'gray' ? ' selected="selected"' : '') . '>' . $this->l('gray') . '&nbsp;&nbsp;</option>
                     </select><br /><br />
 
                     ' . $this->l('Enter the width of iframe.') . '<br />
                     ' . $this->l('Size:    ') . '
                     <input type="text" size="5" name="iframeSizeWidth" value="' . htmlentities($iframeSizeWidth, ENT_COMPAT, 'UTF-8') . '" />
                     <select name="iframeSizeWidthType"">
-                        <option value="%"' . (Configuration::get('PAYSON_IFRAME_SIZE_WIDTH_TYPE') == '%' ? ' selected="selected"' : '') . '>' . $this->l('%') . '&nbsp;&nbsp;</option>
-                        <option value="px"' . (Configuration::get('PAYSON_IFRAME_SIZE_WIDTH_TYPE') == 'px' ? ' selected="selected"' : '') . '>' . $this->l('px') . '&nbsp;&nbsp;</option>
+                        <option value="%"' . (Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE') == '%' ? ' selected="selected"' : '') . '>' . $this->l('%') . '&nbsp;&nbsp;</option>
+                        <option value="px"' . (Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE') == 'px' ? ' selected="selected"' : '') . '>' . $this->l('px') . '&nbsp;&nbsp;</option>
                     </select><br /><br />
 
                     ' . $this->l('Enter the Height of iframe.') . '<br />
@@ -336,8 +331,8 @@ class Paysondirect extends PaymentModule {
                     <input type="text" size="5" name="iframeSizeHeight" value="' . htmlentities($iframeSizeHeight, ENT_COMPAT, 'UTF-8') . '" />   
                         
                     <select name="iframeSizeHeightType"">
-                        <option value="%"' . (Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT_TYPE') == '%' ? ' selected="selected"' : '') . '>' . $this->l('%') . '&nbsp;&nbsp;</option>
-                        <option value="px"' . (Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT_TYPE') == 'px' ? ' selected="selected"' : '') . '>' . $this->l('px') . '&nbsp;&nbsp;</option>
+                        <option value="%"' . (Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE') == '%' ? ' selected="selected"' : '') . '>' . $this->l('%') . '&nbsp;&nbsp;</option>
+                        <option value="px"' . (Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE') == 'px' ? ' selected="selected"' : '') . '>' . $this->l('px') . '&nbsp;&nbsp;</option>
                     </select><br /><br />
                     
                     ' . $this->l('You can find your logs in Admin | Advanced Parameter -> Logs.') . '<br /><br />
@@ -357,7 +352,7 @@ class Paysondirect extends PaymentModule {
         if (!$this->_checkCurrency($params['cart']))
             return;
 
-        return $this->display(__FILE__, 'paysondirect.tpl');
+        return $this->display(__FILE__, 'paysonCheckout2.tpl');
     }
 
     public function hookPaymentReturn($params) {
@@ -368,7 +363,7 @@ class Paysondirect extends PaymentModule {
     }
 
     public function getL($key) {
-        include_once(_PS_MODULE_DIR_ . 'paysondirect/payson_api/def.payson.php');
+        include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/payson_api/def.payson.php');
 
         $translations = array(
             'Your seller e-mail' => $this->l('Your seller e-mail'),
@@ -462,7 +457,6 @@ class Paysondirect extends PaymentModule {
 
     public function PaysonOrderEventsExists($cartId) {
         $result = Db::getInstance()->getValue('SELECT checkout_id FROM `' . _DB_PREFIX_ . 'payson_embedded_order` WHERE `cart_id` = ' . (int) $cartId);
-        //print_r($result);exit;
         return $result;
     }
 
@@ -488,19 +482,12 @@ class Paysondirect extends PaymentModule {
      */
 
     public function getAPIInstanceMultiShop() {
-        include_once(_PS_MODULE_DIR_ . 'paysondirect/paysonEmbedded/paysonapi.php');
-//        require_once 'paysonEmbedded/paysonapi.php';
+        include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/paysonEmbedded/paysonapi.php');
 
-        /* $merchant_id_multishop = explode('##', trim(Configuration::get('PAYSON_AGENTID')));
-          $api_key_multishop = explode('##', trim(Configuration::get('PAYSON_MD5KEY')));
-          $merchant_id = $merchant_id_multishop[$this->config->get('config_store_id')];
-          $api_key = $api_key_multishop[$this->config->get('config_store_id')];
-          $callPaysonApi = new PaysonEmbedded\PaysonApi($merchant_id, $api_key);
-         */
         if ($this->testMode) {
-            return new PaysonEmbedded\PaysonApi(trim(Configuration::get('PAYSON_SANDBOX_MERCHANTID')), trim(Configuration::get('PAYSON_SANDBOX_APIKEY')), TRUE);
+            return new PaysonEmbedded\PaysonApi(trim(Configuration::get('PAYSONCHECKOUT2_SANDBOX_MERCHANTID')), trim(Configuration::get('PAYSONCHECKOUT2_SANDBOX_APIKEY')), TRUE);
         } else {
-            return new PaysonEmbedded\PaysonApi(trim(Configuration::get('PAYSON_MERCHANTID')), trim(Configuration::get('PAYSON_APIKEY')), FALSE);
+            return new PaysonEmbedded\PaysonApi(trim(Configuration::get('PAYSONCHECKOUT2_MERCHANTID')), trim(Configuration::get('PAYSONCHECKOUT2_APIKEY')), FALSE);
         }
     }
 
@@ -513,9 +500,9 @@ class Paysondirect extends PaymentModule {
 
     public function CreateOrder($cart_id, $checkouId, $ReturnCallUrl = Null) {
         include_once(dirname(__FILE__) . '/../../config/config.inc.php');
-        include_once(_PS_MODULE_DIR_ . 'paysondirect/paysonEmbedded/paysonapi.php');
+        include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/paysonEmbedded/paysonapi.php');
 
-        if (Configuration::get('PAYSON_LOGS') == 'yes') {
+        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {
             PrestaShopLogger::addLog($ReturnCallUrl, 1, NULL, NULL, NULL, true);
         }
 
@@ -530,93 +517,80 @@ class Paysondirect extends PaymentModule {
             Tools::redirect('index.php?controller=order&step=1');
 
         $callPaysonApi = $this->getAPIInstanceMultiShop();
-        PrestaShopLogger::addLog('cartExists Cart', 1, NULL, NULL, NULL, true);
-
 
         if ((bool) $cart->OrderExists() != 1) {
-            PrestaShopLogger::addLog('cartExists Cart cat', 1, NULL, NULL, NULL, true);
-            if (count($callPaysonApi->getpaysonResponsErrors()) == 0) {
 
-                $this->getCheckoutIdPayson($cart->id);
+            try {
 
-                $callPaysonApi->doRequest('GET', $this->getCheckoutIdPayson($cart->id));
-
+                $checkout = $callPaysonApi->GetCheckout($this->getCheckoutIdPayson($cart->id));
                 $currency = new Currency($cart->id_currency);
 
                 $total = (float) $cart->getOrderTotal(true, Cart::BOTH);
-
-                switch ($callPaysonApi->getResponsObject()->status) {
+                switch ($checkout->status) {
                     case "created":           //by Cancel
                         Tools::redirect('index.php?controller=order&step=1');
                         break;
                     case "readyToShip":
-                        $callPaysonApi->getResponsObject()->order;
-                        $comment = "Checkout ID: " . $callPaysonApi->getResponsObject()->id . "\n";
-                        $comment .= "Payson status: " . $callPaysonApi->getResponsObject()->status . "\n";
+                        //$checkout->order;
+                        $comment = "Checkout ID: " . $checkout->id . "\n";
+                        $comment .= "Payson status: " . $checkout->status . "\n";
                         $comment .= $this->l('Paid Cart Id:  ') . $cartIdTemp . "\n";
                         $this->testMode ? $comment .= $this->l('Payment mode:  ') . 'TEST MODE' : '';
 
                         $address = new Address(intval($cart->id_address_delivery));
-                        $address->firstname = $callPaysonApi->getResponsObject()->customer->firstName;
-                        $address->lastname = $callPaysonApi->getResponsObject()->customer->lastName;
-                        $address->address1 = $callPaysonApi->getResponsObject()->customer->street;
+                        $address->firstname = $checkout->customer->firstName;
+                        $address->lastname = $checkout->customer->lastName;
+                        $address->address1 = $checkout->customer->street;
                         $address->address2 = '';
-                        $address->city = $callPaysonApi->getResponsObject()->customer->city;
-                        $address->postcode = $callPaysonApi->getResponsObject()->customer->postalCode;
-                        $address->country = $callPaysonApi->getResponsObject()->customer->countryCode;
+                        $address->city = $checkout->customer->city;
+                        $address->postcode = $checkout->customer->postalCode;
+                        $address->country = $checkout->customer->countryCode;
                         $address->id_customer = $cart->id_customer;
                         $address->alias = "Payson account address";
                         $address->update();
 
-
-                        //PrestaShopLogger::addLog($this->getCartIdPayson($callPaysonApi->getResponsObject()->id), 1, NULL, NULL, NULL, true);
-                        if ($this->PaysonorderExists($callPaysonApi->getResponsObject()->id)) {
-                            $this->validateOrder((int) $cart->id, Configuration::get("PAYSON_ORDER_STATE_PAID"), $total, $this->displayName, $comment . '<br />', array(), (int) $currency->id, false, $customer->secure_key);
-                            $this->updatePaysonOrderEvents($callPaysonApi->getResponsObject(), $cart_id);
+                        if ($this->PaysonorderExists($checkout->id)) {
+                            $this->validateOrder((int) $cart->id, Configuration::get("PAYSONCHECKOUT2_ORDER_STATE_PAID"), $total, $this->displayName, $comment . '<br />', array(), (int) $currency->id, false, $customer->secure_key);
+                            $this->updatePaysonOrderEvents($checkout, $cart_id);
                         }
-                        if ($callPaysonApi->getResponsObject()->id != Null AND $callPaysonApi->getResponsObject()->status == 'readyToShip') {
+                        if ($checkout->id != Null AND $checkout->status == 'readyToShip') {
 
-                            $embeddedUrl = $this->getSnippetUrl($callPaysonApi->getResponsObject()->snippet);
-                            Tools::redirect(Context::getContext()->link->getModuleLink('paysondirect', 'payment', array('checkoutId' => $callPaysonApi->getResponsObject()->id, 'width' => Configuration::get('PAYSON_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSON_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
-                            //Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $cart->id . '&id_module=' . $this->id . '&id_order=' . $this->currentOrder . '&key=' . $customer->secure_key);
+                            $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
+                            Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
                         }
-                        //Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $cart->id . '&id_module=' . $this->id . '&id_order=' . $this->currentOrder . '&key=' . $customer->secure_key);
                         break;
                     case "readyToPay":
-                        if ($callPaysonApi->getResponsObject()->id != Null) {
-                            $embeddedUrl = $this->getSnippetUrl($callPaysonApi->getResponsObject()->snippet);
-                            Tools::redirect(Context::getContext()->link->getModuleLink('paysondirect', 'payment', array('checkoutId' => $callPaysonApi->getResponsObject()->id, 'width' => Configuration::get('PAYSON_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSON_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
+                        if ($checkout->id != Null) {
+                            $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
+                            Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
                         }
                         break;
                     case "denied":
-                        $this->validateOrder((int) $cart->id, _PS_OS_CANCELED_, $callPaysonApi->getResponsObject()->order->totalPriceIncludingTax, $this->displayName, $comment . '<br />', array(), (int) $currency->id, false, $customer->secure_key);
-                        $this->updatePaysonOrderEvents($callPaysonApi->getResponsObject(), $cart_id);
+                        $this->validateOrder((int) $cart->id, _PS_OS_CANCELED_, $checkout->order->totalPriceIncludingTax, $this->displayName, $comment . '<br />', array(), (int) $currency->id, false, $customer->secure_key);
+                        $this->updatePaysonOrderEvents($checkout, $cart_id);
                         $this->paysonApiError($this->l('The payment was denied. Please try using a different payment method.'));
                         break;
                     case "canceled":
-                        $this->updatePaysonOrderEvents($callPaysonApi->getResponsObject(), $cart_id);
+                        $this->updatePaysonOrderEvents($checkout, $cart_id);
                         Tools::redirect('index.php?controller=order&step=1');
                         break;
                     case "Expired":
-                        $this->updatePaysonOrderEvents($callPaysonApi->getResponsObject(), $cart_id);
+                        $this->updatePaysonOrderEvents($checkout, $cart_id);
                         Tools::redirect('index.php?controller=order&step=1');
                         break;
                     default:
-                        if (Configuration::get('PAYSON_LOGS') == 'yes') {
-                            PrestaShopLogger::addLog('Status: ', 1, NULL, NULL, NULL, true);
-                            PrestaShopLogger::addLog($callPaysonApi->getResponsObject()->status, 1, NULL, NULL, NULL, true);
+                        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {
+                            PrestaShopLogger::addLog('Status: ' . $checkout->status, 1, NULL, NULL, NULL, true);
                         }
-                        $payson->paysonApiError('Please try using a different payment method.');
+                        $$this->paysonApiError('Please try using a different payment method.');
                 }
-            } else {
-                if (Configuration::get('PAYSON_LOGS') == 'yes') {
-                    foreach ($callPaysonApi->getpaysonResponsErrors() as $value) {
-                        $message = '<Payson Embedded> ErrorId: ' . $value->getErrorId() . '  -- Message: ' . $value->getMessage() . '  -- Parameter: ' . $value->getParameter();
-                        PrestaShopLogger::addLog($message, 1, NULL, NULL, NULL, true);
-                    }
+            } catch (Exception $e) {
+                if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {
+                    $message = '<Payson PrestaShop Checkout 2.0> ' . $e->getMessage();
+                    PrestaShopLogger::addLog($message, 1, NULL, NULL, NULL, true);
                 }
 
-                $payson->paysonApiError('Please try using a different payment method.');
+                $$this->paysonApiError('Please try using a different payment method.');
             }
         } else {
             if ($ReturnCallUrl == 'ipnCall')
@@ -662,7 +636,7 @@ class Paysondirect extends PaymentModule {
             `payment_status` = "' . $paymentDetails->status . '",
             `updated` = NOW(),
             `sender_email` = "' . $paymentDetails->customer->email . '", 
-            `currency_code` = "' . $paymentDetails->order->currency . '",
+            `currency_code` = "' . $paymentDetails->payData->currency . '",
             `tracking_id` = "",
             `type` = "embedded",
             `shippingAddress_name` = "' . $paymentDetails->customer->firstName . '",

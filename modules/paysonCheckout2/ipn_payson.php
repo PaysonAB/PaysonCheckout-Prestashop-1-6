@@ -10,7 +10,7 @@ include_once(dirname(__FILE__) . '/../../config/config.inc.php');
 if (version_compare(_PS_VERSION_, '1.6.1.0 ', '<=')) {
     include_once(dirname(__FILE__) . '/../../header.php');
 }
-PrestaShopLogger::addLog('<IPN>', 1, NULL, NULL, NULL, true);
+
 /*
  * @return void
  * @param int $id_cart
@@ -19,7 +19,7 @@ PrestaShopLogger::addLog('<IPN>', 1, NULL, NULL, NULL, true);
 paysonIpn();
 
 function paysonIpn() {
-    include_once(_PS_MODULE_DIR_ . 'paysondirect/paysondirect.php');
+    include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/paysonCheckout2.php');
 
     $cart_id = '';
     $checkoutId = '';
@@ -27,13 +27,13 @@ function paysonIpn() {
         $cart_id = intval($_GET["id_cart"]);
         $checkoutId = $_GET["checkout"];
     
-        $payson = new Paysondirect();
+        $payson = new PaysonCheckout2();
         $payson->CreateOrder($cart_id, $checkoutId, 'ipnCall');
     }
 
-    if (Configuration::get('PAYSON_LOGS') == 'yes'){
-        PrestaShopLogger::addLog('<Payson Direct api>The response could not validate.', 1, NULL, NULL, NULL, true);
-    }
+//    if (Configuration::get('PAYSON_LOGS') == 'yes'){
+//        PrestaShopLogger::addLog('<Payson Direct api>The response could not validate.', 1, NULL, NULL, NULL, true);
+//    }
 }
 
 ?>

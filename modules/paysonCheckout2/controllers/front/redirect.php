@@ -1,5 +1,5 @@
 <?php
-class PaysondirectRedirectModuleFrontController extends ModuleFrontController {
+class PaysonCheckout2RedirectModuleFrontController extends ModuleFrontController {
 
     public $ssl = true;
     public $display_column_left = false;
@@ -13,7 +13,7 @@ class PaysondirectRedirectModuleFrontController extends ModuleFrontController {
 
         $cart = $this->context->cart;
 
-        Tools::redirect(_PS_BASE_URL_ . __PS_BASE_URI__ . 'modules/paysondirect/redirect.php');
+        Tools::redirect(_PS_BASE_URL_ . __PS_BASE_URI__ . 'modules/paysonCheckout2/redirect.php');
     }
 
 }
