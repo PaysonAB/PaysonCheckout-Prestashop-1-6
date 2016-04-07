@@ -87,7 +87,6 @@ namespace PaysonEmbedded {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $postfields?json_encode($postfields):null);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($ch, CURLOPT_HEADER, TRUE);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             $result = curl_exec($ch);
             $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
             $body = substr($result, $header_size);
