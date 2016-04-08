@@ -27,7 +27,7 @@ class PaysonCheckout2 extends PaymentModule {
         $this->discount_applies = 0;
 
         $this->MODULE_VERSION = sprintf('payson_checkout2_prestashop|%s|%s', $this->version, _PS_VERSION_);
-        $this->testMode = Configuration::get('PAYSON_MODE') == 'sandbox';
+        $this->testMode = Configuration::get('PAYSONCHECKOUT2_MODE') == 'sandbox';
 
         parent::__construct();
 
