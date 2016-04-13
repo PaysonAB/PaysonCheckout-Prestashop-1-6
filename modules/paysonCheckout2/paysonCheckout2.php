@@ -19,7 +19,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0.2';
+        $this->version = '1.0.0.3';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -498,6 +498,15 @@ class PaysonCheckout2 extends PaymentModule {
         return explode($newStr, $url[1]);
     }
 
+    private function returnCall($code) {
+        $this->responseCode($code);
+        exit();
+    }
+
+    private function responseCode($code) {
+        return var_dump(http_response_code($code));
+    }
+
     public function CreateOrder($cart_id, $checkouId, $ReturnCallUrl = Null) {
         include_once(dirname(__FILE__) . '/../../config/config.inc.php');
         include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/paysonEmbedded/paysonapi.php');
@@ -510,10 +519,10 @@ class PaysonCheckout2 extends PaymentModule {
         $cart = new Cart($cartIdTemp);
         $customer = new Customer($cart->id_customer);
 
-        if ($cart->id_customer == 0 OR $cart->id_address_delivery == 0 OR $cart->id_address_invoice == 0 OR ! $this->active)
+        if (($cart->id_customer == 0 OR $cart->id_address_delivery == 0 OR $cart->id_address_invoice == 0 OR ! $this->active) && ($ReturnCallUrl != 'ipnCall'))
             Tools::redirect('index.php?controller=order&step=1');
 
-        if (!Validate::isLoadedObject($customer))
+        if ((!Validate::isLoadedObject($customer)) && ($ReturnCallUrl != 'ipnCall'))
             Tools::redirect('index.php?controller=order&step=1');
 
         $callPaysonApi = $this->getAPIInstanceMultiShop();
@@ -556,13 +565,13 @@ class PaysonCheckout2 extends PaymentModule {
                         if ($checkout->id != Null AND $checkout->status == 'readyToShip') {
 
                             $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
-                            Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
+                            $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect(Context::getContext()->link->getModuleLink('paysoncheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
                         }
                         break;
                     case "readyToPay":
                         if ($checkout->id != Null) {
                             $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
-                            Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
+                            $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect(Context::getContext()->link->getModuleLink('paysoncheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
                         }
                         break;
                     case "denied":
@@ -572,17 +581,17 @@ class PaysonCheckout2 extends PaymentModule {
                         break;
                     case "canceled":
                         $this->updatePaysonOrderEvents($checkout, $cart_id);
-                        Tools::redirect('index.php?controller=order&step=1');
+                        $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect('index.php?controller=order&step=1');
                         break;
                     case "Expired":
                         $this->updatePaysonOrderEvents($checkout, $cart_id);
-                        Tools::redirect('index.php?controller=order&step=1');
+                        $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect('index.php?controller=order&step=1');
                         break;
                     default:
                         if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {
                             PrestaShopLogger::addLog('Status: ' . $checkout->status, 1, NULL, NULL, NULL, true);
                         }
-                        $$this->paysonApiError('Please try using a different payment method.');
+                        $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : $this->paysonApiError('Please try using a different payment method.');
                 }
             } catch (Exception $e) {
                 if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {
@@ -593,12 +602,15 @@ class PaysonCheckout2 extends PaymentModule {
                 $$this->paysonApiError('Please try using a different payment method.');
             }
         } else {
-            if ($ReturnCallUrl == 'ipnCall')
-                return;
-
+            if ($ReturnCallUrl == 'ipnCall') {
+                $this->returnCall(200);
+            }
             $order = Order::getOrderByCartId($cart->id);
 
             Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $cart->id . '&id_module=' . $this->id . '&id_order=' . $this->currentOrder . '&key=' . $customer->secure_key);
+        }
+        if ($ReturnCallUrl == 'ipnCall') {
+            $this->returnCall(200);
         }
     }
 

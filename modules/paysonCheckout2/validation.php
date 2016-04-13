@@ -24,7 +24,10 @@ foreach (Module::getPaymentModules() as $module) {
 }
 
 if (!$authorized) {
-    die(Tools::displayError('This payment method Payson direct is not available.'));
+    foreach (Module::getPaymentModules() as $module) {
+        PrestaShopLogger::addLog($module['name'], 1, NULL, NULL, NULL, true);
+    } 
+    die(Tools::displayError('This payment method Payson Checkout 2.0 is not available.'));
 }
 $payson->CreateOrder($cart_id, NULL, 'returnCall');
 ?>
