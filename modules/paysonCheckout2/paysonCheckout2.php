@@ -19,7 +19,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0.4';
+        $this->version = '1.0.0.5';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -155,8 +155,8 @@ class PaysonCheckout2 extends PaymentModule {
     public function getContent() {
         $this->_html = '<h2>' . $this->l('Payson') . '</h2>';
         if (isset($_POST['submitPayson'])) {
-            if (Configuration::get('PAYSONCHECKOUT2_MODE') != 'sandbox') {
-                if (empty($_POST['APIKEY']))
+            if (Tools::getValue('payson_mode') != 'sandbox') {
+                if (empty($_POST['apikey']))
                     $this->_postErrors[] = $this->l('Payson API-Key is required.');
                 if (empty($_POST['merchantid']))
                     $this->_postErrors[] = $this->l('Payson Merchant Id is required.');
