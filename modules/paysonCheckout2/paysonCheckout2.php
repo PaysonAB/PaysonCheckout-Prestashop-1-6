@@ -19,7 +19,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0.5';
+        $this->version = '1.0.0.6';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -565,13 +565,13 @@ class PaysonCheckout2 extends PaymentModule {
                         if ($checkout->id != Null AND $checkout->status == 'readyToShip') {
 
                             $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
-                            $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect(Context::getContext()->link->getModuleLink('paysoncheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
+                            $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
                         }
                         break;
                     case "readyToPay":
                         if ($checkout->id != Null) {
                             $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
-                            $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect(Context::getContext()->link->getModuleLink('paysoncheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
+                            $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
                         }
                         break;
                     case "denied":
