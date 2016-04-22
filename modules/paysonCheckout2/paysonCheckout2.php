@@ -19,7 +19,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0.6';
+        $this->version = '1.0.0.7';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -469,7 +469,7 @@ class PaysonCheckout2 extends PaymentModule {
     }
 
     public function getCartIdPayson($checkoutId) {
-        $result = Db::getInstance()->getRow('SELECT cart_id FROM `' . _DB_PREFIX_ . 'payson_embedded_order` WHERE `checkout_id` = ' . $checkoutId . ' ORDER BY `added` DESC');
+        $result = Db::getInstance()->getRow('SELECT cart_id FROM `' . _DB_PREFIX_ . 'payson_embedded_order` WHERE `checkout_id` = "' . $checkoutId . '" ORDER BY `added` DESC');
         if ($result['cart_id'])
             return $result['cart_id'];
         else
@@ -531,7 +531,7 @@ class PaysonCheckout2 extends PaymentModule {
 
             try {
 
-                $checkout = $callPaysonApi->GetCheckout($this->getCheckoutIdPayson($cart->id));
+                $checkout = $ReturnCallUrl == 'ipnCall' ? $callPaysonApi->GetCheckout($checkouId) : $callPaysonApi->GetCheckout($this->getCheckoutIdPayson($cart->id));
                 $currency = new Currency($cart->id_currency);
 
                 $total = (float) $cart->getOrderTotal(true, Cart::BOTH);
