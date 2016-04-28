@@ -15,6 +15,7 @@ $cart_id = intval($_GET["id_cart"]);
 $payson = new PaysonCheckout2();
 
 // Check that this payment option is still available in case the customer changed his address just before the end of the checkout process
+/*
 $authorized = false;
 foreach (Module::getPaymentModules() as $module) {
     if (($module['name']) == 'paysonCheckout2') {
@@ -29,5 +30,6 @@ if (!$authorized) {
     } 
     die(Tools::displayError('This payment method Payson Checkout 2.0 is not available.'));
 }
+*/
 $payson->CreateOrder($cart_id, NULL, 'returnCall');
 ?>
