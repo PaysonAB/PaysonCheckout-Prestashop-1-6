@@ -28,7 +28,7 @@ namespace PaysonEmbedded {
         }
         
         public static function create($data) {
-            $merchant =  new Merchant($data->checkoutUri,$data->confirmationUri,$data->notificationUri,$data->termsUri, $data->partnerId);
+            $merchant =  new Merchant($data->checkoutUri,$data->confirmationUri,$data->notificationUri,$data->termsUri, $data->partnerId, $data->integrationInfo);
             return $merchant;
         }
      
