@@ -19,7 +19,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0.8';
+        $this->version = '1.0.0.9';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -510,13 +510,18 @@ class PaysonCheckout2 extends PaymentModule {
     public function CreateOrder($cart_id, $checkouId, $ReturnCallUrl = Null) {
         include_once(dirname(__FILE__) . '/../../config/config.inc.php');
         include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/paysonEmbedded/paysonapi.php');
+		include(dirname(__FILE__).'/../../header.php');
 
         if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {
             PrestaShopLogger::addLog($ReturnCallUrl, 1, NULL, NULL, NULL, true);
         }
 
         $cartIdTemp = $ReturnCallUrl == 'ipnCall' ? $this->getCartIdPayson($checkouId) : $cart_id;
-        $cart = new Cart($cartIdTemp);
+		$context = Context::getContext();
+        $cart = $context->cart;
+       //$cart = new Cart($cartIdTemp);
+        $currency = $this->context->currency;
+		
         $customer = new Customer($cart->id_customer);
 
         if (($cart->id_customer == 0 OR $cart->id_address_delivery == 0 OR $cart->id_address_invoice == 0 OR ! $this->active) && ($ReturnCallUrl != 'ipnCall'))
@@ -532,7 +537,7 @@ class PaysonCheckout2 extends PaymentModule {
             try {
 
                 $checkout = $ReturnCallUrl == 'ipnCall' ? $callPaysonApi->GetCheckout($checkouId) : $callPaysonApi->GetCheckout($this->getCheckoutIdPayson($cart->id));
-                $currency = new Currency($cart->id_currency);
+                //$currency = new Currency($cart->id_currency);
 
                 $total = (float) $cart->getOrderTotal(true, Cart::BOTH);
                 switch ($checkout->status) {
