@@ -19,14 +19,14 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0.9';
+        $this->version = '1.0.1.0';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
         $this->currencies_mode = 'checkbox';
         $this->discount_applies = 0;
 
-        $this->MODULE_VERSION = sprintf('payson_checkout2_prestashop|%s|%s', $this->version, _PS_VERSION_);
+        $this->MODULE_VERSION = sprintf('PaysonCheckout2.0_Prestashop|%s|%s', $this->version, _PS_VERSION_);
         $this->testMode = Configuration::get('PAYSONCHECKOUT2_MODE') == 'sandbox';
 
         parent::__construct();
@@ -568,9 +568,16 @@ class PaysonCheckout2 extends PaymentModule {
                             $this->updatePaysonOrderEvents($checkout, $cart_id);
                         }
                         if ($checkout->id != Null AND $checkout->status == 'readyToShip') {
-
-                            $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
-                            $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
+                            
+                            if(Configuration::get("PAYSON_RECEIPT") == 1)
+                            {
+                                $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
+                                Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSON_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSON_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
+                            }  
+                            else
+                            {
+                               Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $cart->id . '&id_module=' . $this->id . '&id_order=' . $this->currentOrder . '&key=' . $customer->secure_key);
+                            }
                         }
                         break;
                     case "readyToPay":
