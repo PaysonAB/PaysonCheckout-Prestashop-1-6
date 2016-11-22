@@ -19,7 +19,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.1.0';
+        $this->version = '1.0.1.1';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -552,8 +552,8 @@ class PaysonCheckout2 extends PaymentModule {
                         $this->testMode ? $comment .= $this->l('Payment mode:  ') . 'TEST MODE' : '';
 
                         $address = new Address(intval($cart->id_address_delivery));
-                        $address->firstname = $checkout->customer->firstName;
-                        $address->lastname = $checkout->customer->lastName;
+						$address->firstname = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->firstName) > 31 ? substr($checkout->customer->firstName, 0, $address::$definition['fields']['firstname']['size']) : $checkout->customer->firstName));
+                        $address->lastname = $checkout->customer->lastName != NULL ? $checkout->customer->lastName : str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->firstName) > 31 ? substr($checkout->customer->firstName, 0, $address::$definition['fields']['firstname']['size']) : $checkout->customer->firstName)); 
                         $address->address1 = $checkout->customer->street;
                         $address->address2 = '';
                         $address->city = $checkout->customer->city;
