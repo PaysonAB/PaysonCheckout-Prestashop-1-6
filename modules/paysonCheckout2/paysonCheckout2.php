@@ -19,7 +19,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.1.1';
+        $this->version = '1.0.1.2';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -538,8 +538,8 @@ class PaysonCheckout2 extends PaymentModule {
 
                 $checkout = $ReturnCallUrl == 'ipnCall' ? $callPaysonApi->GetCheckout($checkouId) : $callPaysonApi->GetCheckout($this->getCheckoutIdPayson($cart->id));
                 //$currency = new Currency($cart->id_currency);
-
-                $total = (float) $cart->getOrderTotal(true, Cart::BOTH);
+                $total = (float) $cart->getOrderTotal(true, Cart::BOTH) < $checkout->payData->totalPriceIncludingTax + 1 && (float) $cart->getOrderTotal(true, Cart::BOTH) > $checkout->payData->totalPriceIncludingTax - 1? (float) $cart->getOrderTotal(true, Cart::BOTH) : $checkout->payData->totalPriceIncludingTax;
+                //$total = (float) $cart->getOrderTotal(true, Cart::BOTH);
                 switch ($checkout->status) {
                     case "created":           //by Cancel
                         Tools::redirect('index.php?controller=order&step=1');
@@ -559,6 +559,7 @@ class PaysonCheckout2 extends PaymentModule {
                         $address->city = $checkout->customer->city;
                         $address->postcode = $checkout->customer->postalCode;
                         $address->country = $checkout->customer->countryCode;
+                        $address->id_country = Country::getByIso($checkout->customer->countryCode);
                         $address->id_customer = $cart->id_customer;
                         $address->alias = "Payson account address";
                         $address->update();
