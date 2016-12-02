@@ -19,7 +19,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.1.2';
+        $this->version = '1.0.1.3';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -560,6 +560,8 @@ class PaysonCheckout2 extends PaymentModule {
                         $address->postcode = $checkout->customer->postalCode;
                         $address->country = $checkout->customer->countryCode;
                         $address->id_country = Country::getByIso($checkout->customer->countryCode);
+                        $address->phone = $checkout->customer->phone;
+                        $address->phone_mobile = $checkout->customer->phone;
                         $address->id_customer = $cart->id_customer;
                         $address->alias = "Payson account address";
                         $address->update();
