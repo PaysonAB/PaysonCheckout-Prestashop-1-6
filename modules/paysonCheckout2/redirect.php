@@ -98,8 +98,8 @@ try {
     }
 
     $embeddedUrl = $payson->getSnippetUrl($checkoutTempObj->snippet);
-    Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkoutTempObj->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
-} catch (Exception $e) {
+    Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkoutTempObj->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'). '%', 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT').'px', 'snippetUrl' => $embeddedUrl[0])));
+}catch (Exception $e) {
     if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {
         $message = '<Payson PrestaShop Checkout 2.0> ' . $e->getMessage();
         PrestaShopLogger::addLog($message, 1, NULL, NULL, NULL, true);

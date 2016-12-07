@@ -19,7 +19,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.1.3';
+        $this->version = '1.0.1.4';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -572,11 +572,11 @@ class PaysonCheckout2 extends PaymentModule {
                         }
                         if ($checkout->id != Null AND $checkout->status == 'readyToShip') {
                             
-                            if(Configuration::get("PAYSON_RECEIPT") == 1)
+                            if(Configuration::get("PAYSONCHECKOUT2_RECEIPT") == 1)
                             {
                                 $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
-                                Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSON_IFRAME_SIZE_WIDTH'), 'width_type' => Configuration::get('PAYSON_IFRAME_SIZE_WIDTH_TYPE'), 'height' => Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT'), 'height_type' => Configuration::get('PAYSON_IFRAME_SIZE_HEIGHT_TYPE'), 'snippetUrl' => $embeddedUrl[0])));
-                            }  
+                                Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH') . '%', 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT') . 'px', 'snippetUrl' => $embeddedUrl[0])));
+                            } 
                             else
                             {
                                Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $cart->id . '&id_module=' . $this->id . '&id_order=' . $this->currentOrder . '&key=' . $customer->secure_key);
