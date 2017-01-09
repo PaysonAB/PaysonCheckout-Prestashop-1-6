@@ -5,8 +5,11 @@
 Module for Prestashop implementing Payson Checkout 2.0
 * Support 
 Prestashop 1.6.X
-* Requirements: 
-Curl
+
+## Requirements
+* Curl
+* Standard One Page Checkout
+* Guest checkout
 
 ## Installation
 

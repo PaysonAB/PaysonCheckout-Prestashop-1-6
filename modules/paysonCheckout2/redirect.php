@@ -1,200 +1,338 @@
 <?php
-
 global $cookie;
 include_once(dirname(__FILE__) . '/../../config/config.inc.php');
 include_once(dirname(__FILE__) . '/../../init.php');
 include_once(dirname(__FILE__) . '/paysonCheckout2.php');
 include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/paysonEmbedded/paysonapi.php');
-
+$context = Context::getContext();
 $payson = new PaysonCheckout2();
-
 $cart = new Cart(intval($cookie->id_cart));
+$address = new Address();
+$customer  = new Customer();
 
-$address = new Address(intval($cart->id_address_invoice));
+if($context->customer->isLogged() || $context->customer->is_guest)
+{
+    $customer = new Customer(intval($cart->id_customer));  
+    $address = new Address(intval($cart->id_address_invoice));
+      
+    $state = NULL;
+    if ($address->id_state)
+        $state = new State(intval($address->id_state));
 
-$state = NULL;
+    if (!Validate::isLoadedObject($address))
+    {
+        Logger::addLog($payson->getL('Payson error: (invalid address)'), 1, NULL, NULL, NULL, true);
+        Tools::redirect('index.php?controller=order&step=1');
+    }
+    
+    if (!Validate::isLoadedObject($customer))
+    {
+        Logger::addLog($payson->getL('Payson error: (invalid customer)'), 1, NULL, NULL, NULL, true);
+        Tools::redirect('index.php?controller=order&step=1');
+    }
+}
+else
+{
+    if(isset($_GET["address_data"]))
+    {
+        $paysonCustomerInfoToUpdate = json_decode($_GET['address_data'], true);
+        $tempCustomer = Customer::getCustomersByEmail(getMailPaysonCheckout($payson, $context->cookie->paysonCheckoutId));
+        $customer = NULL;
+        $address = NULL;
 
-if ($address->id_state)
-    $state = new State(intval($address->id_state));
-$customer = new Customer(intval($cart->id_customer));
+        if(count($tempCustomer) > 0){
+            $customerId = null;
+            foreach ($tempCustomer as $result){
+                 $customerId  = $result['id_customer'];
+            }
+            
+            $customer = new Customer($customerId); 
+            //Update customer address in PS
+            $address = updateCustomerAddressPS($cart->id, $paysonCustomerInfoToUpdate, $customer->id);
+            
+        }
+        else{
+            //This row create a new customer in PS.
+            $customer = addPaysonCustomerPS($payson, $cart->id, $context->cookie->paysonCheckoutId, $paysonCustomerInfoToUpdate);
+            //This row create a new customer address in PS. 
+            $address = addPaysonAddressPS($cart->id, Country::getByIso($paysonCustomerInfoToUpdate['CountryCode']), $paysonCustomerInfoToUpdate, $customer->id);
+        }
 
-
-if (!Validate::isLoadedObject($address))
-    die($payson->getL('Payson error: (invalid address)'));
-
-if (!Validate::isLoadedObject($customer))
-    die($payson->getL('Payson error: (invalid customer)'));
+        $cart->secure_key = $customer->secure_key;
+        $cart->id_customer = $customer->id;
+        $cart->id_address_delivery = $address->id;
+        $cart->id_address_invoice = $address->id;
+        $cart->update();    
+    }    
+}
 
 
 // check currency of payment
 $currency_order = new Currency(intval($cart->id_currency));
-$currencies_module = $payson->getCurrency();
-
-if (is_array($currencies_module)) {
-    foreach ($currencies_module AS $some_currency_module) {
-        if ($currency_order->iso_code == $some_currency_module['iso_code']) {
-            $currency_module = $some_currency_module;
-        }
-    }
-} else {
-    $currency_module = $currencies_module;
-}
-
-if ($currency_order->id != $currency_module['id_currency']) {
-    $cookie->id_currency = $currency_module['id_currency'];
-    $cart->id_currency = $currency_module['id_currency'];
-    $cart->update();
-}
-
-$amount = floatval($cart->getOrderTotal(true, 3));
-
-$url = Tools::getHttpHost(false, true) . __PS_BASE_URI__;
-
-$trackingId = time();
 
 use PaysonEmbedded\CurrencyCode as CurrencyCode;
-//print_r("http://" . $url);exit;
-$confirmationUri = "http://" . $url . "modules/paysonCheckout2/validation.php?trackingId=" . $trackingId . "&id_cart=" . $cart->id;
-$notificationUri = "http://" . $url . 'modules/paysonCheckout2/ipn_payson.php?id_cart=' . $cart->id;
-$termsUri = "http://" . $url . "index.php?id_cms=3&controller=cms&content_only=1";
-//$checkoutUri     = "http://" . $url . "index.php?controller=order&step=1";
-$checkoutUri = "http://" . $url . "modules/paysonCheckout2/validation.php?trackingId=" . $trackingId . "&id_cart=" . $cart->id;
 
 $callPaysonApi = $payson->getAPIInstanceMultiShop();
-$paysonMerchant = new PaysonEmbedded\Merchant($checkoutUri, $confirmationUri, $notificationUri, $termsUri, NULL, $payson->MODULE_VERSION);
-$paysonMerchant->reference = $cart->id;
-$payData = new PaysonEmbedded\PayData($currency_module['iso_code']);
 
-orderItemsList($cart, $payson, $payData);
-
-$gui = new PaysonEmbedded\Gui($payson->languagePayson(Language::getIsoById($cookie->id_lang)), Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME'), Configuration::get('PAYSONCHECKOUT2_VERIFICATION'), (int) Configuration::get('PAYSONCHECKOUT2_REQUEST_PHONE'));
-$customer = new PaysonEmbedded\Customer($customer->firstname, $customer->lastname, $customer->email, $address->phone, "", $address->city, $address->country, $address->postcode, $address->address1);
-$checkout = new PaysonEmbedded\Checkout($paysonMerchant, $payData, $gui, $customer);
 $checkoutTempObj = NULL;
-//echo '<pre>';print_r($checkout);'</pre>';exit;
-try {
-    $paysonEmbeddedStatus = '';
-    if ($payson->getCheckoutIdPayson($cart->id) != Null) {
-        $checkoutTempObj = $callPaysonApi->GetCheckout($payson->getCheckoutIdPayson($cart->id));
-        //$callPaysonApi->doRequest('GET', $payson->getCheckoutIdPayson($cart->id));
-        $paysonEmbeddedStatus = $checkoutTempObj->status;
+
+try 
+{
+    if ($context->cookie->paysonCheckoutId != Null && canUpdate($callPaysonApi, $context->cookie->paysonCheckoutId) && checkCurrency($currency_order->iso_code, $callPaysonApi, $context->cookie->paysonCheckoutId)) {
+    //if ($context->cookie->paysonCheckoutId != Null && canUpdate($callPaysonApi, $context->cookie->paysonCheckoutId)) {
+        //Get the checkout object
+        $checkoutTempObj = $callPaysonApi->GetCheckout($context->cookie->paysonCheckoutId);
+
+        $checkoutTempObj = $callPaysonApi->UpdateCheckout(updatePaysonCheckout($checkoutTempObj, $customer, $cart, $payson, $address));
+        $payson->updatePaysonOrderEvents($checkoutTempObj);
     }
- 
-    if ($payson->getCheckoutIdPayson($cart->id) != Null AND $paysonEmbeddedStatus == 'created') {
-        $checkoutIdTemp = $callPaysonApi->CreateCheckout($checkout);
-        $checkoutTemp = $callPaysonApi->GetCheckout($checkoutIdTemp);
-        $checkoutTempObj = $callPaysonApi->UpdateCheckout($checkoutTemp);
-        
-        if ($checkoutTempObj->id != null) {
-            $payson->createPaysonOrderEvents($checkoutTempObj->id, $cart->id);
-        }
-    } else {
-        $checkoutId = $callPaysonApi->CreateCheckout($checkout);
+    else 
+    {
+
+        //Create a new checkout object
+        $checkoutId = $callPaysonApi->CreateCheckout(addPaysonCheckout($customer, $cart, $payson, $currency_order->iso_code, $context->language->id, $address));
+        $context->cookie->__set('paysonCheckoutId',$checkoutId);
+        //Get the checkout object
         $checkoutTempObj = $callPaysonApi->GetCheckout($checkoutId);
-
-        if ($checkoutTempObj->id != null) {
+        
+        if ($checkoutTempObj->id != null) 
+        {
             $payson->createPaysonOrderEvents($checkoutTempObj->id, $cart->id);
         }
     }
-
+    
+    if((isset($_GET["type"]) && $_GET["type"] === 'checkPayson') || (isset($_GET["address_data"]) && $_GET["address_data"] != NULL))
+    {       
+       print $checkoutTempObj->snippet; $_GET["address_data"] = NULL; $_GET["type"] = NULL; exit;
+    }
+    
     $embeddedUrl = $payson->getSnippetUrl($checkoutTempObj->snippet);
+
     Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkoutTempObj->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'). '%', 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT').'px', 'snippetUrl' => $embeddedUrl[0])));
-}catch (Exception $e) {
+} catch (Exception $e) {
+
     if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {
         $message = '<Payson PrestaShop Checkout 2.0> ' . $e->getMessage();
         PrestaShopLogger::addLog($message, 1, NULL, NULL, NULL, true);
     }
-    $payson->paysonApiError('Please try using a different payment method.');
+    $payson->paysonApiError('Please try using a different payment method (redirect).');
 }
 
+function canUpdate($callPaysonApi, $paysonCheckoutId){
+    $checkout = $callPaysonApi->GetCheckout($paysonCheckoutId);
+    switch ($checkout->status){
+        case 'created':
+        case 'readyToPay':
+        case 'formsFiled':
+        case 'processingPayment':
+            return true;
+        default: 
+            return false;
+    }
+    return false;  
+}
+
+function checkCurrency($cartCurrency, $callPaysonApi, $paysonCheckoutId){
+    $checkout = $callPaysonApi->GetCheckout($paysonCheckoutId);
+    
+    if(strtoupper($cartCurrency) == strtoupper($checkout->payData->currency)){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+function addPaysonCheckout($customer, $cart, $payson, $currency, $id_lang, $address) {
+    $url = Tools::getHttpHost(false, true) . __PS_BASE_URI__;
+    $trackingId = time();
+    $confirmationUri = "http://" . $url . "modules/paysonCheckout2/validation.php?trackingId=" . $trackingId . "&id_cart=" . $cart->id;
+    $notificationUri = "http://" . $url . 'modules/paysonCheckout2/ipn_payson.php?id_cart=' . $cart->id;
+    $termsUri =        "http://" . $url . "index.php?id_cms=3&controller=cms&content_only=1";
+    $checkoutUri =     "http://" . $url . "modules/paysonCheckout2/validation.php?trackingId=" . $trackingId . "&id_cart=" . $cart->id;
+
+
+    $paysonMerchant = new PaysonEmbedded\Merchant($checkoutUri, $confirmationUri, $notificationUri, $termsUri, NULL, $payson->MODULE_VERSION);
+    $paysonMerchant->reference = $cart->id;
+    $payData = new PaysonEmbedded\PayData($currency);
+    $payData->items = orderItemsList($cart, $payson);
+    $gui = new PaysonEmbedded\Gui($payson->languagePayson(Language::getIsoById($id_lang)), Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME'), Configuration::get('PAYSONCHECKOUT2_VERIFICATION'), (int) Configuration::get('PAYSONCHECKOUT2_REQUEST_PHONE'));
+    $customerCheckout  = $customer->email == Null ? Null :new PaysonEmbedded\Customer($customer->firstname, $customer->lastname, $customer->email, $address->phone, "", $address->city, $address->country, $address->postcode, $address->address1);
+    $checkout = new PaysonEmbedded\Checkout($paysonMerchant, $payData, $gui, $customerCheckout);
+    
+    return $checkout;
+}
+
+function updatePaysonCheckout($checkout, $customer, $cart, $payson, $address) 
+{   
+
+    if($customer->email != Null && $checkout->status !=  'readyToPay'){
+        $checkout->customer->firstName = $customer->firstname ;
+        $checkout->customer->lastName = $customer->lastname;
+        $checkout->customer->email = $customer->email;
+        $checkout->customer->phone = $address->phone;
+        $checkout->customer->city = $address->city; 
+        $checkout->customer->countryCode = $address->country;
+        $checkout->customer->postalCode = $address->postcode;
+        $checkout->customer->street = $address->address1;
+    }
+    
+    
+    $checkout->payData->items = orderItemsList($cart, $payson);
+    
+    return $checkout;
+}
+
+function getMailPaysonCheckout($payson, $trackingId) 
+{
+    $callPaysonApi = $payson->getAPIInstanceMultiShop();
+    $checkoutObj = $callPaysonApi->GetCheckout($trackingId);
+    return $checkoutObj->customer->email;
+}
+
+function addPaysonCustomerPS($payson, $cartId, $checkoutId, $paysonCustomerInfoToUpdate){
+        $cart = new Cart(intval($cartId));
+
+        $customer = new Customer();
+        $password = Tools::passwdGen(8);
+        $customer->is_guest = 1;
+        $customer->passwd = Tools::encrypt($password);
+        $customer->id_default_group = (int) (Configuration::get('PS_CUSTOMER_GROUP', null, $cart->id_shop));
+        $customer->optin = 0;
+        $customer->active = 1;
+        $customer->id_gender = 9;
+        $customer->email = getMailPaysonCheckout($payson, $checkoutId);
+        $customer->firstname = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($paysonCustomerInfoToUpdate['FirstName']) > 31 ? substr($paysonCustomerInfoToUpdate['FirstName'], 0, $address::$definition['fields']['firstname']['size']) : $paysonCustomerInfoToUpdate['FirstName']));
+        $customer->lastname = $paysonCustomerInfoToUpdate['LastName'] != NULL ? $paysonCustomerInfoToUpdate['LastName'] : str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($paysonCustomerInfoToUpdate['FirstName']) > 31 ? substr($paysonCustomerInfoToUpdate['FirstName'], 0, $address::$definition['fields']['firstname']['size']) : $paysonCustomerInfoToUpdate['FirstName']));
+            
+        $customer->add();
+
+        return $customer;     
+}
+
+function addPaysonAddressPS($cartId, $countryId, $paysonCustomerInfoToUpdate, $customerId){
+    $cart = new Cart(intval($cartId));
+
+    $address = new Address();
+    $address->firstname = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($paysonCustomerInfoToUpdate['FirstName']) > 31 ? substr($paysonCustomerInfoToUpdate['FirstName'], 0, $address::$definition['fields']['firstname']['size']) : $paysonCustomerInfoToUpdate['FirstName']));
+    $address->lastname = $paysonCustomerInfoToUpdate['LastName'] != NULL ? $paysonCustomerInfoToUpdate['LastName'] : (str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($paysonCustomerInfoToUpdate['FirstName']) > 31 ? substr($paysonCustomerInfoToUpdate['FirstName'], 0, $address::$definition['fields']['firstname']['size']) : $paysonCustomerInfoToUpdate['FirstName'])));
+     
+    $address->address1 = $paysonCustomerInfoToUpdate['Street'];
+    $address->address2 = '';
+    $address->city = $paysonCustomerInfoToUpdate['City'];
+    $address->postcode = $paysonCustomerInfoToUpdate['PostalCode'];
+    $address->country = $paysonCustomerInfoToUpdate['CountryCode'];
+    $address->id_customer = $customerId;
+    $address->id_country = $countryId;
+    $address->phone = '000000';
+    $address->phone_mobile = '000000';
+    //$address->id_state   = (int)$customer->id_state;
+    $address->alias = "Payson account address";
+    $address->add();
+
+    return $address;                   
+}
+
+function updateCustomerAddressPS($cartId, $paysonCustomerInfoToUpdate, $customerId){
+    $cart = new Cart(intval($cartId));
+    
+    
+    $address = new Address(Address::getFirstCustomerAddressId((int)$customerId)); 
+    $address->firstname = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($paysonCustomerInfoToUpdate['FirstName']) > 31 ? substr($paysonCustomerInfoToUpdate['FirstName'], 0, $address::$definition['fields']['firstname']['size']) : $paysonCustomerInfoToUpdate['FirstName']));
+    $address->lastname = $paysonCustomerInfoToUpdate['LastName'] != NULL ? $paysonCustomerInfoToUpdate['LastName'] : (str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($paysonCustomerInfoToUpdate['FirstName']) > 31 ? substr($paysonCustomerInfoToUpdate['FirstName'], 0, $address::$definition['fields']['firstname']['size']) : $paysonCustomerInfoToUpdate['FirstName'])));
+    $address->address1 = $paysonCustomerInfoToUpdate['Street'];
+    $address->address2 = '';
+    $address->city = $paysonCustomerInfoToUpdate['City'];
+    $address->postcode = $paysonCustomerInfoToUpdate['PostalCode'];
+    $address->country = $paysonCustomerInfoToUpdate['CountryCode'];
+    $address->id_country = Country::getByIso($paysonCustomerInfoToUpdate['CountryCode']);
+    $address->alias = "Payson account address";
+    $address->update();
+
+    return $address;                   
+}
 
 /*
  * @return void
  * @param array $paysonUrl, $productInfo, $shopInfo, $moduleVersionToTracking
  * @disc the function request and redirect Payson API Sandbox
  */
-
 /*
  * @return product list
  * @param int $id_cart
  * @disc 
  */
-
-function orderItemsList($cart, $payson, $payData) {
+function orderItemsList($cart, $payson) 
+{
     include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/PaysonEmbedded/orderitem.php');
-
     $orderitemslist = array();
-
-
-
-    foreach ($cart->getProducts() AS $cartProduct) {
+    
+    foreach ($cart->getProducts() AS $cartProduct) 
+    {
         if (isset($cartProduct['quantity_discount_applies']) && $cartProduct['quantity_discount_applies'] == 1)
             $payson->discount_applies = 1;
+        
         $my_taxrate = $cartProduct['rate'] / 100;
         $product_price = $cartProduct['price_wt'];
-
         $attributes_small = isset($cartProduct['attributes_small']) ? $cartProduct['attributes_small'] : '';
-
-       $payData->AddOrderItem(new  PaysonEmbedded\OrderItem(
-                $cartProduct['name'] . '  ' . $attributes_small, number_format($product_price, 2, '.', ''), $cartProduct['cart_quantity'], number_format($my_taxrate, 3, '.', ''), $cartProduct['id_product']
-        ));
+        $orderitemslist[] = new  PaysonEmbedded\OrderItem(
+            $cartProduct['name'] . '  ' . $attributes_small, number_format($product_price, 2, '.', ''), $cartProduct['cart_quantity'], number_format($my_taxrate, 3, '.', ''), $cartProduct['id_product']
+        );
     }
-
     // check four discounts 
     $cartDiscounts = $cart->getDiscounts();
-
-    /*
-      $tax_rate = 0;
-      $taxDiscount = Cart::getTaxesAverageUsed((int)($cart->id));
-      if (isset($taxDiscount) AND $taxDiscount != 1)
-      $tax_rate = $taxDiscount * 0.01;
-     */
-
-
 
     $total_shipping_wt = floatval($cart->getTotalShippingCost());
     $total_shipping_wot = 0;
     $carrier = new Carrier($cart->id_carrier, $cart->id_lang);
-
-    if ($total_shipping_wt > 0) {
-
+    
+    if ($total_shipping_wt > 0) 
+    {
         $carriertax = Tax::getCarrierTaxRate((int) $carrier->id, $cart->id_address_invoice);
         $carriertax_rate = $carriertax / 100;
         $forward_vat = 1 + $carriertax_rate;
         $total_shipping_wot = $total_shipping_wt / $forward_vat;
+        
+        if (!empty($cartDiscounts) and $cartDiscounts[0]['obj']->free_shipping) 
+        {
 
-        if (!empty($cartDiscounts) and $cartDiscounts[0]['obj']->free_shipping) {
-            //if (empty($cartDiscounts) and $cartDiscounts->free_shipping) {
-            //if (empty($cartDiscounts))
-        } else {
-            $payData->AddOrderItem(new  PaysonEmbedded\OrderItem(
+        } 
+        else 
+        {
+            $orderitemslist[] = new  PaysonEmbedded\OrderItem(
                     isset($carrier->name) ? $carrier->name : 'shipping', number_format($total_shipping_wt, 2, '.', ''), 1, number_format($carriertax_rate, 2, '.', ''), 'shipping', PaysonEmbedded\OrderItemType::SERVICE
-            ));
+            );
         }
     }
-
+    
     $tax_rate_discount = 0;
     $taxDiscount = Cart::getTaxesAverageUsed((int) ($cart->id));
-
-    if (isset($taxDiscount) AND $taxDiscount != 1) {
+    
+    if (isset($taxDiscount) AND $taxDiscount != 1) 
+    {
         $tax_rate_discount = $taxDiscount * 0.01;
     }
-
+    
     $discountTemp = 0;
     $i = 0;
-    foreach ($cartDiscounts AS $cartDiscount) {
+    
+    foreach ($cartDiscounts AS $cartDiscount) 
+    {
         $discountTemp -= ($cartDiscount['value_real'] - (empty($cartDiscounts) ? 0 : $cartDiscounts[$i]['obj']->free_shipping ? $total_shipping_wt : 0));
         $i++;
     }
-    if (!empty($cartDiscounts)) {
-        $payData->AddOrderItem(new  PaysonEmbedded\OrderItem($cartDiscount['name'], number_format($discountTemp, Configuration::get('PS_PRICE_DISPLAY_PRECISION'), '.', ''), 1, number_format($tax_rate_discount, 4, '.', ''), "discount", PaysonEmbedded\OrderItemType::DISCOUNT));
+    
+    if (!empty($cartDiscounts)) 
+    {
+        $orderitemslist[] = new  PaysonEmbedded\OrderItem($cartDiscount['name'], number_format($discountTemp, Configuration::get('PS_PRICE_DISPLAY_PRECISION'), '.', ''), 1, number_format($tax_rate_discount, 4, '.', ''), "discount", PaysonEmbedded\OrderItemType::DISCOUNT);
     }
-
-    if ($cart->gift) {
+    
+    if ($cart->gift) 
+    {
        $wrappingTemp = number_format(Tools::convertPrice((float) $cart->getGiftWrappingPrice(false), Currency::getCurrencyInstance((int) $cart->id_currency)), Configuration::get('PS_PRICE_DISPLAY_PRECISION'), '.', '') * number_format((((($cart->getOrderTotal(true, Cart::ONLY_WRAPPING) * 100) / $cart->getOrderTotal(false, Cart::ONLY_WRAPPING))) / 100), 2, '.', '');
-        $payData->AddOrderItem(new  PaysonEmbedded\OrderItem('gift wrapping', $wrappingTemp, 1, number_format((((($cart->getOrderTotal(true, Cart::ONLY_WRAPPING) * 100) / $cart->getOrderTotal(false, Cart::ONLY_WRAPPING)) - 100) / 100), 2, '.', ''), 'wrapping', PaysonEmbedded\OrderItemType::SERVICE));
+        $orderitemslist[] = new  PaysonEmbedded\OrderItem('gift wrapping', $wrappingTemp, 1, number_format((((($cart->getOrderTotal(true, Cart::ONLY_WRAPPING) * 100) / $cart->getOrderTotal(false, Cart::ONLY_WRAPPING)) - 100) / 100), 2, '.', ''), 'wrapping', PaysonEmbedded\OrderItemType::SERVICE);
     }
-}
 
+    return $orderitemslist;
+}
 //ready, -----------------------------------------------------------------------
 ?>

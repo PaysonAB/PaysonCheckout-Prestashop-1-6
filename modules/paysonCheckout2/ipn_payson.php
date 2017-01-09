@@ -23,7 +23,7 @@ function paysonIpn() {
 
     $cart_id = '';
     $checkoutId = '';
-    if (isset($_GET[checkout]) && $_GET[checkout] != NULL){
+    if (isset($_GET["checkout"]) && $_GET["checkout"] != NULL){
         $cart_id = intval($_GET["id_cart"]);
         $checkoutId = $_GET["checkout"];
     
