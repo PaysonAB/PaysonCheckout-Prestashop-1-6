@@ -17,7 +17,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.1.0.0';
+        $this->version = '1.1.0.1';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -567,7 +567,7 @@ class PaysonCheckout2 extends PaymentModule {
            $context->cookie->__set('paysonCheckoutId', NULL);
        }
           
-        if (!$cart->OrderExists()) {
+        if ((int)$cart->OrderExists() == false) {
             
             $currency = new Currency($cart->id_currency);
 
