@@ -279,16 +279,18 @@ function orderItemsList($cart, $payson)
             $payson->discount_applies = 1;
         
         $my_taxrate = $cartProduct['rate'] / 100;
-        $product_price = $cartProduct['price_wt'];
+        //$product_price = $cartProduct['price_wt'];
+        $product_price = Tools::ps_round($cartProduct['price_wt'], (int)$currency->decimals * _PS_PRICE_DISPLAY_PRECISION_);
         $attributes_small = isset($cartProduct['attributes_small']) ? $cartProduct['attributes_small'] : '';
         $orderitemslist[] = new  PaysonEmbedded\OrderItem(
-            $cartProduct['name'] . '  ' . $attributes_small, number_format($product_price, 2, '.', ''), $cartProduct['cart_quantity'], number_format($my_taxrate, 3, '.', ''), $cartProduct['id_product']
+            $cartProduct['name'] . ' ' . $attributes_small, $product_price, $cartProduct['cart_quantity'], number_format($my_taxrate, 3, '.', ''), $cartProduct['id_product']
         );
     }
     // check four discounts 
     $cartDiscounts = $cart->getDiscounts();
 
-    $total_shipping_wt = floatval($cart->getTotalShippingCost());
+    //$total_shipping_wt = floatval($cart->getTotalShippingCost());
+    $total_shipping_wt = Tools::ps_round($cart->getTotalShippingCost(), (int)$currency->decimals * _PS_PRICE_DISPLAY_PRECISION_);
     $total_shipping_wot = 0;
     $carrier = new Carrier($cart->id_carrier, $cart->id_lang);
     
@@ -306,7 +308,7 @@ function orderItemsList($cart, $payson)
         else 
         {
             $orderitemslist[] = new  PaysonEmbedded\OrderItem(
-                    isset($carrier->name) ? $carrier->name : 'shipping', number_format($total_shipping_wt, 2, '.', ''), 1, number_format($carriertax_rate, 2, '.', ''), 'shipping', PaysonEmbedded\OrderItemType::SERVICE
+                    isset($carrier->name) ? $carrier->name : 'shipping', $total_shipping_wt, 1, number_format($carriertax_rate, 2, '.', ''), 'shipping', PaysonEmbedded\OrderItemType::SERVICE
             );
         }
     }
