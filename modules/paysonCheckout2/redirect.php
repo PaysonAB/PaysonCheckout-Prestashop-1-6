@@ -163,7 +163,13 @@ function addPaysonCheckout($customer, $cart, $payson, $currency, $id_lang, $addr
     $payData = new PaysonEmbedded\PayData($currency);
     $payData->items = orderItemsList($cart, $payson);
     $gui = new PaysonEmbedded\Gui($payson->languagePayson(Language::getIsoById($id_lang)), Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME'), Configuration::get('PAYSONCHECKOUT2_VERIFICATION'), (int) Configuration::get('PAYSONCHECKOUT2_REQUEST_PHONE'));
-    $customerCheckout  = $customer->email == Null ? Null :new PaysonEmbedded\Customer($customer->firstname, $customer->lastname, $customer->email, $address->phone, "", $address->city, $address->country, $address->postcode, $address->address1);
+
+    if($payson->testMode){ 
+        $customerCheckout  = new PaysonEmbedded\Customer('Tess T', 'Persson', 'test@payson.se', 1111111, "4605092222", 'Stan', 'SE', '99999', '');
+    }else{
+        $customerCheckout  = $customer->email == Null ? Null :new PaysonEmbedded\Customer($customer->firstname, $customer->lastname, $customer->email, $address->phone, "", $address->city, Country::getIsoById($address->id_country), $address->postcode, $address->address1);
+    }
+    
     $checkout = new PaysonEmbedded\Checkout($paysonMerchant, $payData, $gui, $customerCheckout);
     
     return $checkout;
