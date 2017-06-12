@@ -602,7 +602,7 @@ class PaysonCheckout2 extends PaymentModule {
                         $address->address2 = '';
                         $address->city = $checkout->customer->city;
                         $address->postcode = $checkout->customer->postalCode;
-                        $address->country = $checkout->customer->countryCode;
+                        $address->country = Country::getNameById(Configuration::get('PS_LANG_DEFAULT'),Country::getByIso($checkout->customer->countryCode));
                         $address->id_country = Country::getByIso($checkout->customer->countryCode);
                         $address->phone = $checkout->customer->phone;
                         $address->phone_mobile = $checkout->customer->phone;
