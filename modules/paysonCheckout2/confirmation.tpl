@@ -1,4 +1,7 @@
-<p>{l s='Your order on' mod='paysonCheckout2'} <span class="bold">{$shop_name}</span> {l s='is complete.' mod='paysonCheckout2'}
+<div class="alert alert-success">
+    {l s='Your order on %s is complete.' sprintf=$shop_name mod='paysonCheckout2'}
+</div>
+<p>
     <br /><br />
     {l s='You have chosen the Checkout 2.0 method.' mod='paysonCheckout2'}
     <br /><br /><span class="bold">{l s='Your order will be sent very soon.' mod='paysonCheckout2'}</span>
