@@ -178,7 +178,7 @@ function updatePaysonCheckout($checkout, $customer, $cart, $payson, $address)
         $checkout->customer->email = $customer->email;
         $checkout->customer->phone = $address->phone;
         $checkout->customer->city = $address->city; 
-        $checkout->customer->countryCode = $address->country;
+        $checkout->customer->countryCode = Country::getIsoById($address->id_country);
         $checkout->customer->postalCode = $address->postcode;
         $checkout->customer->street = $address->address1;
     }
@@ -227,7 +227,7 @@ function addPaysonAddressPS($cartId, $countryId, $paysonCustomerInfoToUpdate, $c
     $address->address2 = '';
     $address->city = $paysonCustomerInfoToUpdate['City'];
     $address->postcode = $paysonCustomerInfoToUpdate['PostalCode'];
-    $address->country = $paysonCustomerInfoToUpdate['CountryCode'];
+    $address->country = Country::getNameById(Configuration::get('PS_LANG_DEFAULT'),$countryId);
     $address->id_customer = $customerId;
     $address->id_country = $countryId;
     $address->phone = '000000';
@@ -250,7 +250,7 @@ function updateCustomerAddressPS($cartId, $paysonCustomerInfoToUpdate, $customer
     $address->address2 = '';
     $address->city = $paysonCustomerInfoToUpdate['City'];
     $address->postcode = $paysonCustomerInfoToUpdate['PostalCode'];
-    $address->country = $paysonCustomerInfoToUpdate['CountryCode'];
+    $address->country = Country::getNameById(Configuration::get('PS_LANG_DEFAULT'),$countryId);
     $address->id_country = Country::getByIso($paysonCustomerInfoToUpdate['CountryCode']);
     $address->alias = "Payson account address";
     $address->update();
