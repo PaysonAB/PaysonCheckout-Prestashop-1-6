@@ -8,6 +8,7 @@ $(document).ready(function(){
         $getElementHPChildren = $getElementHPayment.children[0];
         $getElementHPCClass = $getElementHPChildren.className;
 
+        /*       
         if($getElementHPCClass === 'warning'){
             $("#HOOK_PAYMENT").each(function() {
                 $("#HOOK_PAYMENT").hide();   
@@ -17,6 +18,7 @@ $(document).ready(function(){
         }else{
             $("#opc_new_account").append("<div id=iframepayson></div>"); 
         }
+        */
 
         amount = $("#total_price").text();
         $intervalToShowPayson = 1;

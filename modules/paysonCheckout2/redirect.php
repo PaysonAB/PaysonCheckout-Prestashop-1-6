@@ -123,9 +123,12 @@ function canUpdate($callPaysonApi, $paysonCheckoutId){
     switch ($checkout->status){
         case 'created':
         case 'readyToPay':
-        case 'formsFiled':
         case 'processingPayment':
             return true;
+            
+        case 'readyToShip':
+        case 'formsFiled':
+            return false;
         default: 
             return false;
     }
@@ -169,7 +172,7 @@ function addPaysonCheckout($customer, $cart, $payson, $currency, $id_lang, $addr
     }else{
         $customerCheckout  = $customer->email == Null ? Null :new PaysonEmbedded\Customer($customer->firstname, $customer->lastname, $customer->email, $address->phone, "", $address->city, Country::getIsoById($address->id_country), $address->postcode, $address->address1);
     }
-    
+
     $checkout = new PaysonEmbedded\Checkout($paysonMerchant, $payData, $gui, $customerCheckout);
     
     return $checkout;
