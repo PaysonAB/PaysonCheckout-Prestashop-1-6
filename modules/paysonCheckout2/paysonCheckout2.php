@@ -199,7 +199,7 @@ class PaysonCheckout2 extends PaymentModule {
                     Configuration::updateValue('PAYSONCHECKOUT2_RECEIPT', strval($_POST['enableReceipt']));
 
                 if (!isset($_POST['enableRequestPhone']))
-                    Configuration::updateValue('PAYSONCHECKOUT2_REQUEST_PHONE', '0');
+                    Configuration::updateValue('PAYSONCHECKOUT2_REQUEST_PHONE', '1');
                 else
                     Configuration::updateValue('PAYSONCHECKOUT2_REQUEST_PHONE', strval($_POST['enableRequestPhone']));
 
@@ -270,7 +270,7 @@ class PaysonCheckout2 extends PaymentModule {
         $iframeSizeHeightType = array_key_exists('iframeSizeHeightType', $_POST) ? $_POST['iframeSizeHeightType'] : (array_key_exists('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE', $conf) ? $conf['PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'] : '');
 
         $enableReceipt = array_key_exists('enableReceipt', $_POST) ? $_POST['enableReceipt'] : (array_key_exists('PAYSONCHECKOUT2_RECEIPT', $conf) ? $conf['PAYSONCHECKOUT2_RECEIPT'] : '0');
-        $enableRequestPhone = array_key_exists('enableRequestPhone', $_POST) ? $_POST['enableRequestPhone'] : (array_key_exists('PAYSONCHECKOUT2_REQUEST_PHONE', $conf) ? $conf['PAYSONCHECKOUT2_REQUEST_PHONE'] : '0');
+        $enableRequestPhone = array_key_exists('enableRequestPhone', $_POST) ? $_POST['enableRequestPhone'] : (array_key_exists('PAYSONCHECKOUT2_REQUEST_PHONE', $conf) ? $conf['PAYSONCHECKOUT2_REQUEST_PHONE'] : '1');
         $this->_html .= '
 		<form action="' . $_SERVER['REQUEST_URI'] . '" method="post" style="clear: both;">
 		<fieldset>
