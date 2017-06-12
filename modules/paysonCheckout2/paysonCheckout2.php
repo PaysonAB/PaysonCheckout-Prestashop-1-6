@@ -117,12 +117,12 @@ class PaysonCheckout2 extends PaymentModule {
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_LOGS', 'no')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_ONE', 'yes')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_VERIFICATION', 'none')
-                OR ! Configuration::updateValue('PAYSONCHECKOUT2_COLOR_SCHEME', 'gray')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_COLOR_SCHEME', 'white')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', '100')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE', '%')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', '700')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE', 'px')
-                OR ! Configuration::updateValue('PAYSONCHECKOUT2_REQUEST_PHONE', '0')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_REQUEST_PHONE', '1')
                 OR ! $this->registerHook('header')
                 OR ! $this->registerHook('footer')
                 OR ! $this->registerHook('payment')
@@ -332,6 +332,12 @@ class PaysonCheckout2 extends PaymentModule {
                         <option value="blue"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'blue' ? ' selected="selected"' : '') . '>' . $this->l('blue') . '&nbsp;&nbsp;</option>
                         <option value="white"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'white' ? ' selected="selected"' : '') . '>' . $this->l('white') . '&nbsp;&nbsp;</option>
                         <option value="gray"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'gray' ? ' selected="selected"' : '') . '>' . $this->l('gray') . '&nbsp;&nbsp;</option>
+                        <option value="GrayTextLogos"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'GrayTextLogos' ? ' selected="selected"' : '') . '>' . $this->l('GrayTextLogos') . '&nbsp;&nbsp;</option>
+                        <option value="BlueTextLogos"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'BlueTextLogos' ? ' selected="selected"' : '') . '>' . $this->l('BlueTextLogos') . '&nbsp;&nbsp;</option>
+                        <option value="WhiteTextLogos"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'WhiteTextLogos' ? ' selected="selected"' : '') . '>' . $this->l('WhiteTextLogos') . '&nbsp;&nbsp;</option>
+                        <option value="GrayNoFooter"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'GrayNoFooter' ? ' selected="selected"' : '') . '>' . $this->l('GrayNoFooter') . '&nbsp;&nbsp;</option>
+                        <option value="BlueNoFooter"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'BlueNoFooter' ? ' selected="selected"' : '') . '>' . $this->l('BlueNoFooter') . '&nbsp;&nbsp;</option>
+                        <option value="WhiteNoFooter"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'WhiteNoFooter' ? ' selected="selected"' : '') . '>' . $this->l('WhiteNoFooter') . '&nbsp;&nbsp;</option>
                     </select><br /><br />
 
                     ' . $this->l('Enter the width of iframe.') . '<br />
@@ -573,7 +579,7 @@ class PaysonCheckout2 extends PaymentModule {
 
             try {
              
-                $total = (float) $cart->getOrderTotal(true, Cart::BOTH) < $checkout->payData->totalPriceIncludingTax + 0.5 && (float) $cart->getOrderTotal(true, Cart::BOTH) > $checkout->payData->totalPriceIncludingTax - 0.5? (float) $cart->getOrderTotal(true, Cart::BOTH) : $checkout->payData->totalPriceIncludingTax;
+                $total = (float) $cart->getOrderTotal(true, Cart::BOTH) < $checkout->payData->totalPriceIncludingTax + 2 && (float) $cart->getOrderTotal(true, Cart::BOTH) > $checkout->payData->totalPriceIncludingTax - 2? (float) $cart->getOrderTotal(true, Cart::BOTH) : $checkout->payData->totalPriceIncludingTax;
                 //$total = (float) $cart->getOrderTotal(true, Cart::BOTH);
                 
                 //$total  $checkout->payData->totalPriceIncludingTax
