@@ -145,12 +145,19 @@ function checkCurrency($cartCurrency, $callPaysonApi, $paysonCheckoutId){
 function addPaysonCheckout($customer, $cart, $payson, $currency, $id_lang, $address) {
     $url = Tools::getHttpHost(false, true) . __PS_BASE_URI__;
     $trackingId = time();
-    $confirmationUri = "http://" . $url . "modules/paysonCheckout2/validation.php?trackingId=" . $trackingId . "&id_cart=" . $cart->id;
-    $notificationUri = "http://" . $url . 'modules/paysonCheckout2/ipn_payson.php?id_cart=' . $cart->id;
-    $termsUri =        "http://" . $url . "index.php?id_cms=3&controller=cms&content_only=1";
-    $checkoutUri =     "http://" . $url . "modules/paysonCheckout2/validation.php?trackingId=" . $trackingId . "&id_cart=" . $cart->id;
 
-
+    
+    if (Configuration::get('PS_SSL_ENABLED') || Configuration::get('PS_SSL_ENABLED_EVERYWHERE')) {
+        $protocol = 'https://';
+    } else {
+        $protocol = 'http://';
+    }
+    
+    $confirmationUri = $protocol . $url . "modules/paysonCheckout2/validation.php?trackingId=" . $trackingId . "&id_cart=" . $cart->id;
+    $notificationUri = $protocol . $url . 'modules/paysonCheckout2/ipn_payson.php?id_cart=' . $cart->id;
+    $termsUri =        $protocol . $url . "index.php?id_cms=3&controller=cms&content_only=1";
+    $checkoutUri =     $protocol . $url . "modules/paysonCheckout2/validation.php?trackingId=" . $trackingId . "&id_cart=" . $cart->id;
+    
     $paysonMerchant = new PaysonEmbedded\Merchant($checkoutUri, $confirmationUri, $notificationUri, $termsUri, NULL, $payson->MODULE_VERSION);
     $paysonMerchant->reference = $cart->id;
     $payData = new PaysonEmbedded\PayData($currency);
