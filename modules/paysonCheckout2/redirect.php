@@ -48,7 +48,7 @@ else
             
             $customer = new Customer($customerId); 
             //Update customer address in PS
-            $address = updateCustomerAddressPS($cart->id, $paysonCustomerInfoToUpdate, $customer->id);
+            $address = updateCustomerAddressPS($cart->id, Country::getByIso($paysonCustomerInfoToUpdate['CountryCode']), $paysonCustomerInfoToUpdate, $customer->id);
             
         }
         else{
@@ -67,7 +67,7 @@ else
 }
 
 
-// check currency of payment
+// check$currency->iso_code of payment
 $currency_order = new Currency(intval($cart->id_currency));
 
 use PaysonEmbedded\CurrencyCode as CurrencyCode;
@@ -83,14 +83,14 @@ try
         //Get the checkout object
         $checkoutTempObj = $callPaysonApi->GetCheckout($context->cookie->paysonCheckoutId);
 
-        $checkoutTempObj = $callPaysonApi->UpdateCheckout(updatePaysonCheckout($checkoutTempObj, $customer, $cart, $payson, $address));
+        $checkoutTempObj = $callPaysonApi->UpdateCheckout(updatePaysonCheckout($checkoutTempObj, $customer, $cart, $payson, $address, $currency_order));
         $payson->updatePaysonOrderEvents($checkoutTempObj);
     }
     else 
     {
 
         //Create a new checkout object
-        $checkoutId = $callPaysonApi->CreateCheckout(addPaysonCheckout($customer, $cart, $payson, $currency_order->iso_code, $context->language->id, $address));
+        $checkoutId = $callPaysonApi->CreateCheckout(addPaysonCheckout($customer, $cart, $payson, $currency_order, $context->language->id, $address));
         $context->cookie->__set('paysonCheckoutId',$checkoutId);
         //Get the checkout object
         $checkoutTempObj = $callPaysonApi->GetCheckout($checkoutId);
@@ -163,8 +163,8 @@ function addPaysonCheckout($customer, $cart, $payson, $currency, $id_lang, $addr
     
     $paysonMerchant = new PaysonEmbedded\Merchant($checkoutUri, $confirmationUri, $notificationUri, $termsUri, NULL, $payson->MODULE_VERSION);
     $paysonMerchant->reference = $cart->id;
-    $payData = new PaysonEmbedded\PayData($currency);
-    $payData->items = orderItemsList($cart, $payson);
+    $payData = new PaysonEmbedded\PayData($currency->iso_code);
+    $payData->items = orderItemsList($cart, $payson, $currency);
     $gui = new PaysonEmbedded\Gui($payson->languagePayson(Language::getIsoById($id_lang)), Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME'), Configuration::get('PAYSONCHECKOUT2_VERIFICATION'), (int) Configuration::get('PAYSONCHECKOUT2_REQUEST_PHONE'));
 
     if($payson->testMode){ 
@@ -178,7 +178,7 @@ function addPaysonCheckout($customer, $cart, $payson, $currency, $id_lang, $addr
     return $checkout;
 }
 
-function updatePaysonCheckout($checkout, $customer, $cart, $payson, $address) 
+function updatePaysonCheckout($checkout, $customer, $cart, $payson, $address, $currency) 
 {   
 
     if($customer->email != Null && $checkout->status !=  'readyToPay'){
@@ -193,7 +193,7 @@ function updatePaysonCheckout($checkout, $customer, $cart, $payson, $address)
     }
     
     
-    $checkout->payData->items = orderItemsList($cart, $payson);
+    $checkout->payData->items = orderItemsList($cart, $payson, $currency);
     
     return $checkout;
 }
@@ -248,7 +248,7 @@ function addPaysonAddressPS($cartId, $countryId, $paysonCustomerInfoToUpdate, $c
     return $address;                   
 }
 
-function updateCustomerAddressPS($cartId, $paysonCustomerInfoToUpdate, $customerId){
+function updateCustomerAddressPS($cartId, $countryId, $paysonCustomerInfoToUpdate, $customerId){
     $cart = new Cart(intval($cartId));
     
     
@@ -277,11 +277,12 @@ function updateCustomerAddressPS($cartId, $paysonCustomerInfoToUpdate, $customer
  * @param int $id_cart
  * @disc 
  */
-function orderItemsList($cart, $payson) 
+function orderItemsList($cart, $payson, $currency = null) 
 {
     include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/PaysonEmbedded/orderitem.php');
     $orderitemslist = array();
     
+    $cur = $currency->decimals;
     foreach ($cart->getProducts() AS $cartProduct) 
     {
         if (isset($cartProduct['quantity_discount_applies']) && $cartProduct['quantity_discount_applies'] == 1)
@@ -289,7 +290,8 @@ function orderItemsList($cart, $payson)
         
         $my_taxrate = $cartProduct['rate'] / 100;
         //$product_price = $cartProduct['price_wt'];
-        $product_price = Tools::ps_round($cartProduct['price_wt'], (int)$currency->decimals * _PS_PRICE_DISPLAY_PRECISION_);
+
+        $product_price = Tools::ps_round($cartProduct['price_wt'], $cur * _PS_PRICE_DISPLAY_PRECISION_);
         $attributes_small = isset($cartProduct['attributes_small']) ? $cartProduct['attributes_small'] : '';
         $orderitemslist[] = new  PaysonEmbedded\OrderItem(
             $cartProduct['name'] . ' ' . $attributes_small, $product_price, $cartProduct['cart_quantity'], number_format($my_taxrate, 3, '.', ''), $cartProduct['id_product']
@@ -299,7 +301,7 @@ function orderItemsList($cart, $payson)
     $cartDiscounts = $cart->getDiscounts();
 
     //$total_shipping_wt = floatval($cart->getTotalShippingCost());
-    $total_shipping_wt = Tools::ps_round($cart->getTotalShippingCost(), (int)$currency->decimals * _PS_PRICE_DISPLAY_PRECISION_);
+    $total_shipping_wt = Tools::ps_round($cart->getTotalShippingCost(), $cur * _PS_PRICE_DISPLAY_PRECISION_);
     $total_shipping_wot = 0;
     $carrier = new Carrier($cart->id_carrier, $cart->id_lang);
     

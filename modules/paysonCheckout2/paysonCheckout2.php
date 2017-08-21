@@ -17,7 +17,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.1.0.2';
+        $this->version = '1.1.0.3';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
