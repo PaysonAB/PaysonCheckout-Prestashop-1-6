@@ -67,4 +67,5 @@ $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_82eeb6473283e91502d365943
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_0669609477457655b0dd596b6eb9f07d'] = 'Betald kundvagn Id:';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_5eef9a5c90395c7605e01e93f10ad266'] = 'Betalning läge:';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_5928ab7e396ec117fa0c443731b07e71'] = 'Betalningen kunde ej genomföras. Vänligen försök igen eller välj en annan betalmetod.';
+$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_47ad93da979638364f6dc57385ab56b8'] = 'Betala med Payson via faktura, kort, internetbank, delbetalning eller sms';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_38dfeed7bf1f3e62b010c19c19a75eb8'] = 'Betala med Payson Checkout 2.0';
