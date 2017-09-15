@@ -119,9 +119,7 @@ class PaysonCheckout2 extends PaymentModule {
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_VERIFICATION', 'none')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_COLOR_SCHEME', 'white')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', '100')
-                OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE', '%')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', '700')
-                OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE', 'px')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_REQUEST_PHONE', '1')
                 OR ! $this->registerHook('header')
                 OR ! $this->registerHook('footer')
@@ -148,9 +146,7 @@ class PaysonCheckout2 extends PaymentModule {
                 Configuration::deleteByName('PAYSONCHECKOUT2_VERIFICATION') AND
                 Configuration::deleteByName('PAYSONCHECKOUT2_COLOR_SCHEME') AND
                 Configuration::deleteByName('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH') AND
-                Configuration::deleteByName('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE') AND
                 Configuration::deleteByName('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT') AND
-                Configuration::deleteByName('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE') AND
                 Configuration::deleteByName('PAYSONCHECKOUT2_REQUEST_PHONE') AND
                 Configuration::deleteByName('paysonpay') AND
                 Configuration::deleteByName('PAYSONCHECKOUT2_INVOICE_ENABLED'));
@@ -189,9 +185,7 @@ class PaysonCheckout2 extends PaymentModule {
                 Configuration::updateValue('PAYSONCHECKOUT2_MERCHANTID', intval($_POST['merchantid']));
                 Configuration::updateValue('PAYSONCHECKOUT2_APIKEY', strval($_POST['apikey']));
                 Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', strval($_POST['iframeSizeWidth']));
-                Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE', strval($_POST['iframeSizeWidthType']));
                 Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', strval($_POST['iframeSizeHeight']));
-                Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE', strval($_POST['iframeSizeHeightType']));
 
                 if (!isset($_POST['enableReceipt']))
                     Configuration::updateValue('PAYSONCHECKOUT2_RECEIPT', '0');
@@ -255,9 +249,7 @@ class PaysonCheckout2 extends PaymentModule {
                     'PAYSONCHECKOUT2_RECEIPT',
                     'PAYSONCHECKOUT2_REQUEST_PHONE',
                     'PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH',
-                    'PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE',
-                    'PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT',
-                    'PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'
+                    'PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'
         ));
 
         $payson_mode_text = 'Currently using ' . Configuration::get('PAYSONCHECKOUT2_MODE') . ' mode.';
@@ -265,9 +257,7 @@ class PaysonCheckout2 extends PaymentModule {
         $merchantid = array_key_exists('merchantid', $_POST) ? $_POST['merchantid'] : (array_key_exists('PAYSONCHECKOUT2_MERCHANTID', $conf) ? $conf['PAYSONCHECKOUT2_MERCHANTID'] : '');
         $apikey = array_key_exists('apikey', $_POST) ? $_POST['apikey'] : (array_key_exists('PAYSONCHECKOUT2_APIKEY', $conf) ? $conf['PAYSONCHECKOUT2_APIKEY'] : '');
         $iframeSizeWidth = array_key_exists('iframeSizeWidth', $_POST) ? $_POST['iframeSizeWidth'] : (array_key_exists('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', $conf) ? $conf['PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'] : '');
-        $iframeSizeWidthType = array_key_exists('iframeSizeWidthType', $_POST) ? $_POST['iframeSizeWidthType'] : (array_key_exists('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE', $conf) ? $conf['PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH_TYPE'] : '');
         $iframeSizeHeight = array_key_exists('iframeSizeHeight', $_POST) ? $_POST['iframeSizeHeight'] : (array_key_exists('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', $conf) ? $conf['PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT'] : '');
-        $iframeSizeHeightType = array_key_exists('iframeSizeHeightType', $_POST) ? $_POST['iframeSizeHeightType'] : (array_key_exists('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE', $conf) ? $conf['PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT_TYPE'] : '');
 
         $enableReceipt = array_key_exists('enableReceipt', $_POST) ? $_POST['enableReceipt'] : (array_key_exists('PAYSONCHECKOUT2_RECEIPT', $conf) ? $conf['PAYSONCHECKOUT2_RECEIPT'] : '0');
         $enableRequestPhone = array_key_exists('enableRequestPhone', $_POST) ? $_POST['enableRequestPhone'] : (array_key_exists('PAYSONCHECKOUT2_REQUEST_PHONE', $conf) ? $conf['PAYSONCHECKOUT2_REQUEST_PHONE'] : '1');
