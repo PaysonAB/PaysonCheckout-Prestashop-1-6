@@ -17,7 +17,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.1.0.4';
+        $this->version = '1.1.0.5';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -585,9 +585,12 @@ class PaysonCheckout2 extends PaymentModule {
                         $comment .= $this->l('Paid Cart Id:  ') . $customer->id . "\n";
                         $this->testMode ? $comment .= $this->l('Payment mode:  ') . 'TEST MODE' : '';
 
+                        $checkoutCustomerFirstName = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->firstName) > 31 ? mb_strcut($checkout->customer->firstName, 0, 31) : $checkout->customer->firstName));
+                        $checkoutCustomerLastName = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->lastName) > 31 ? mb_strcut($checkout->customer->lastName, 0, 31) : $checkout->customer->lastName));
+
                         $address = new Address(intval($cart->id_address_delivery));
-                        $address->firstname = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->firstName) > 31 ? substr($checkout->customer->firstName, 0, $address::$definition['fields']['firstname']['size']) : $checkout->customer->firstName));
-                        $address->lastname = $checkout->customer->lastName != NULL ? $checkout->customer->lastName : str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->firstName) > 31 ? substr($checkout->customer->firstName, 0, $address::$definition['fields']['firstname']['size']) : $checkout->customer->firstName));
+                        $address->firstname = $checkoutCustomerFirstName;
+                        $address->lastname = $checkout->customer->lastName != NULL ? $checkoutCustomerLastName : $checkoutCustomerFirstName;
                         $address->address1 = $checkout->customer->street;
                         $address->address2 = '';
                         $address->city = $checkout->customer->city;
