@@ -116,7 +116,7 @@ class PaysonCheckout2 extends PaymentModule {
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_RECEIPT', '0')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_LOGS', 'no')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_ONE', 'yes')
-                OR ! Configuration::updateValue('PAYSONCHECKOUT2_VERIFICATION', 'none')
+                OR ! Configuration::updateValue('PAYSONCHECKOUT2_VERIFICATION', '0')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_COLOR_SCHEME', 'white')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', '100')
                 OR ! Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', '700')
@@ -310,8 +310,8 @@ class PaysonCheckout2 extends PaymentModule {
                     ' . $this->l('Can be used to add extra customer verification') . '<br />
                     ' . $this->l('Verification:    ') . ' 
                     <select name="payson_verification">
-                        <option value="none"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == 'none' ? ' selected="selected"' : '') . '>' . $this->l('None') . '&nbsp;&nbsp;</option>
-                        <!--<option value="bankid"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == 'bankid' ? ' selected="selected"' : '') . '>' . $this->l('Bankid') . '&nbsp;&nbsp;</option>-->
+                        <option value="0"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == '0' ? ' selected="selected"' : '') . '>' . $this->l('None') . '&nbsp;&nbsp;</option>
+                        <option value="1"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == '1' ? ' selected="selected"' : '') . '>' . $this->l('Bankid') . '&nbsp;&nbsp;</option>
                     </select><br /><br />
                                     ' .
                 $this->l('Enable request phone:') .
