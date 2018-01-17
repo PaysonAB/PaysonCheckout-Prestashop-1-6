@@ -33,9 +33,9 @@ if($context->customer->isLogged() || $context->customer->is_guest)
 }
 else
 {
-    if(isset($_GET["address_data"]))
+    if(isset($_GET['Email']) && $_GET['Email'] != NULL)
     {
-        $paysonCustomerInfoToUpdate = json_decode($_GET['address_data'], true);
+        $paysonCustomerInfoToUpdate = $_GET;
         $tempCustomer = Customer::getCustomersByEmail(getMailPaysonCheckout($payson, $context->cookie->paysonCheckoutId));
         $customer = NULL;
         $address = NULL;
@@ -62,7 +62,8 @@ else
         $cart->id_customer = $customer->id;
         $cart->id_address_delivery = $address->id;
         $cart->id_address_invoice = $address->id;
-        $cart->update();    
+        $cart->update();
+        exit();  
     }    
 }
 
@@ -101,9 +102,9 @@ try
         }
     }
     
-    if((isset($_GET["type"]) && $_GET["type"] === 'checkPayson') || (isset($_GET["address_data"]) && $_GET["address_data"] != NULL))
+    if((isset($_GET["type"]) && $_GET["type"] === 'checkPayson') || (isset($_GET['Email']) && $_GET['Email'] != NULL && $checkoutTempObj->status != "readyToShip"))
     {       
-       print $checkoutTempObj->snippet; $_GET["address_data"] = NULL; $_GET["type"] = NULL; exit;
+       print $checkoutTempObj->snippet; unset($_GET); exit;
     }
     
     $embeddedUrl = $payson->getSnippetUrl($checkoutTempObj->snippet);
@@ -122,13 +123,21 @@ function canUpdate($callPaysonApi, $paysonCheckoutId){
     $checkout = $callPaysonApi->GetCheckout($paysonCheckoutId);
     switch ($checkout->status){
         case 'created':
+            return true;
+            break;
         case 'readyToPay':
+            return true;
+            break;
         case 'processingPayment':
             return true;
+            break;
             
         case 'readyToShip':
+            return false;
+            break;
         case 'formsFiled':
             return false;
+            break;
         default: 
             return false;
     }

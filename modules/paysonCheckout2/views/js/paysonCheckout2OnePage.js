@@ -46,7 +46,8 @@ $(document).ready(function(){
 
     function displaySnippet() {
         $.ajax({
-           url: window.location.origin  + '/modules/paysonCheckout2/redirect.php?type=checkPayson',
+           type: "POST",
+           url: '/modules/paysonCheckout2/redirect.php?type=checkPayson',
            success:function (data) {
             $("#iframepayson").html(data);
             if(document.getElementById('paysonIframe')) {
@@ -63,7 +64,10 @@ $(document).ready(function(){
 
     function updatCartAddress(address) {
         $.ajax({
-           url: window.location.origin  + "/modules/paysonCheckout2/redirect.php?address_data="+JSON.stringify(address),
+           type: "GET",
+           url: '/modules/paysonCheckout2/redirect.php',
+           data: address,
+           cache: false,
            success:function (data) {
                 //$("#iframepayson").html(data);
            }
@@ -80,6 +84,3 @@ $(document).ready(function(){
         iframe.contentWindow.postMessage('release', '*');
     }
 });
-        
-
-
