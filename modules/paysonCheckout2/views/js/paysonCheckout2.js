@@ -2,14 +2,19 @@ $(document).ready(function(){
     if(document.getElementById('opc_payment_methods')) 
     {
         var amount = 0;
+        amount = $("#total_price").text();
+        $intervalToShowPayson = 1;
         
-        document.getElementById("new_account_form").style.display = ("none");
+        /*if (document.getElementById("new_account_form")) {
+            document.getElementById("new_account_form").style.display = ("none");
+        }*/
+        
+        /*document.getElementById("new_account_form").style.display = ("none");
         $getElementHPayment = document.getElementById("HOOK_PAYMENT");
         $getElementHPChildren = $getElementHPayment.children[0];
-        $getElementHPCClass = $getElementHPChildren.className;
+        $getElementHPCClass = $getElementHPChildren.className;*/
 
-        /*       
-        if($getElementHPCClass === 'warning'){
+        /*if($getElementHPCClass === 'warning'){
             $("#HOOK_PAYMENT").each(function() {
                 $("#HOOK_PAYMENT").hide();   
             });
@@ -17,43 +22,56 @@ $(document).ready(function(){
 
         }else{
             $("#opc_new_account").append("<div id=iframepayson></div>"); 
-        }
-        */
+        }*/
 
-        amount = $("#total_price").text();
-        $intervalToShowPayson = 1;
         setInterval(function() {
             $isPayson = document.getElementById("paysonTracker");
-            $paysonTrackerId = $isPayson.children[0].id;
+            if ($isPayson) {
+                $paysonTrackerId = $isPayson.children[0].id;
+                if ($paysonTrackerId) {
+                    if(amount !== $("#total_price").text() || ($intervalToShowPayson === 1 && document.getElementById("payment_" + $paysonTrackerId).checked === true)){
+                        /*if (document.getElementById("new_account_form")) {
+                            document.getElementById("new_account_form").style.display = ("none");
+                        }*/
+                       
+                        if(document.getElementById('iframepayson')) {
+                            document.getElementById('iframepayson').style.display = ("block");
+                        }
+                        
+                        /*$(".confirm_button_div").each(function() {
+                            $(".confirm_button_div").hide();   
+                        });*/
 
-            if(amount !== $("#total_price").text() || ($intervalToShowPayson === 1 && document.getElementById("payment_" + $paysonTrackerId).checked === true)){
-                document.getElementById("new_account_form").style.display = ("none");
-                document.getElementById("iframepayson").style.display = ("block");
-                $(".confirm_button_div").each(function() {
-                    $(".confirm_button_div").hide();   
-                });
+                        sendLockDown();
+                        displaySnippet();
 
-                sendLockDown();
-                displaySnippet();
+                        /*$(".confirm_button_div").each(function() {
+                            $(".confirm_button_div").hide();   
+                        });*/
 
-                $(".confirm_button_div").each(function() {
-                    $(".confirm_button_div").hide();   
-                });
+                        $("#offer_password").each(function() {
+                            $("#offer_password").hide(); 
 
-                $("#offer_password").each(function() {
-                    $("#offer_password").hide(); 
-
-                });
-               $intervalToShowPayson = 0;
-               amount = $("#total_price").text();
-            }
-            if(document.getElementById("payment_" + $paysonTrackerId).checked === false){
-                document.getElementById("iframepayson").style.display = ("none");
-                document.getElementById("new_account_form").style.display = ("block");
-                $(".confirm_button_div").each(function() {
-                    $(".confirm_button_div").show();   
-                });
-                $intervalToShowPayson = 1;
+                        });
+                       $intervalToShowPayson = 0;
+                       amount = $("#total_price").text();
+                    }
+                    if(document.getElementById("payment_" + $paysonTrackerId).checked === false){
+                        if(document.getElementById('iframepayson')) {
+                            document.getElementById('iframepayson').style.display = ("none");
+                        }
+                       
+                        /*if (document.getElementById("new_account_form")) {
+                        document.getElementById("new_account_form").style.display = ("block");
+                        }*/
+                        
+                        $(".confirm_button_div").each(function() {
+                            $(".confirm_button_div").show();   
+                        });
+                        
+                        $intervalToShowPayson = 1;
+                    }
+                }
             }
         }, 500);  
     displaySnippet();     
@@ -62,13 +80,11 @@ $(document).ready(function(){
 
     function displaySnippet() {
         $.ajax({
-           url: window.location.origin  + '/modules/paysonCheckout2/redirect.php?type=checkPayson',
+           url: baseDir + 'modules/paysonCheckout2/redirect.php?type=checkPayson',
            success:function (data) {
             $("#iframepayson").html(data);
-            if(document.getElementById('paysonIframe')) {
                 sendRelease();
-            }
-           }
+           }, cache: false
         });
     }
 
@@ -79,23 +95,22 @@ $(document).ready(function(){
 
     function updatCartAddress(address) {
         $.ajax({
-           url: window.location.origin  + "/modules/paysonCheckout2/redirect.php?address_data="+JSON.stringify(address),
+           url: baseDir  + "modules/paysonCheckout2/redirect.php?address_data="+JSON.stringify(address),
            success:function (data) {
-            $("#iframepayson").html(data);
-           }
+            //$("#iframepayson").html(data);
+           }, cache: false
         });
     }
 
     function sendLockDown() {
-        var iframe = document.getElementById('paysonIframe');
-        iframe.contentWindow.postMessage('lock', '*');
+        if(document.getElementById('paysonIframe')) {
+            document.getElementById('paysonIframe').contentWindow.postMessage('lock', '*');
+        }
     }
 
     function sendRelease() {
-        var iframe = document.getElementById('paysonIframe');
-        iframe.contentWindow.postMessage('release', '*');
+        if(document.getElementById('paysonIframe')) {
+            document.getElementById('paysonIframe').contentWindow.postMessage('release', '*');
+        }
     }
 });
-        
-
-

@@ -23,7 +23,7 @@ $(document).ready(function(){
             $("#offer_password").hide();   
         });
         
-        $("#opc_payment_methods").append("<div id=iframepayson></div>"); //produktnivå 
+        $("#opc_payment_methods").append("<div id=iframepayson></div>");
 
         amount = $("#total_price").text();
 
@@ -47,13 +47,11 @@ $(document).ready(function(){
     function displaySnippet() {
         $.ajax({
            type: "POST",
-           url: '/modules/paysonCheckout2/redirect.php?type=checkPayson',
+           url: baseDir + 'modules/paysonCheckout2/redirect.php?type=checkPayson',
            success:function (data) {
             $("#iframepayson").html(data);
-            if(document.getElementById('paysonIframe')) {
-                sendRelease();
-            }
-           }
+            sendRelease();
+           }, cache: false
         });
     }
 
@@ -65,22 +63,24 @@ $(document).ready(function(){
     function updatCartAddress(address) {
         $.ajax({
            type: "GET",
-           url: '/modules/paysonCheckout2/redirect.php',
+           url: baseDir + 'modules/paysonCheckout2/redirect.php',
            data: address,
            cache: false,
            success:function (data) {
                 //$("#iframepayson").html(data);
-           }
+           }, cache: false
         });
     }
 
     function sendLockDown() {
-        var iframe = document.getElementById('paysonIframe');
-        iframe.contentWindow.postMessage('lock', '*');
+        if(document.getElementById('paysonIframe')) {
+           document.getElementById('paysonIframe').contentWindow.postMessage('lock', '*');
+        }
     }
 
     function sendRelease() {
-        var iframe = document.getElementById('paysonIframe');
-        iframe.contentWindow.postMessage('release', '*');
+        if(document.getElementById('paysonIframe')) {
+            document.getElementById('paysonIframe').contentWindow.postMessage('release', '*');
+        }
     }
 });

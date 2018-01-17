@@ -79,32 +79,48 @@ $checkoutTempObj = NULL;
 
 try 
 {
-    if ($context->cookie->paysonCheckoutId != Null && canUpdate($callPaysonApi, $context->cookie->paysonCheckoutId) && checkCurrency($currency_order->iso_code, $callPaysonApi, $context->cookie->paysonCheckoutId)) {
-    //if ($context->cookie->paysonCheckoutId != Null && canUpdate($callPaysonApi, $context->cookie->paysonCheckoutId)) {
-        //Get the checkout object
-        $checkoutTempObj = $callPaysonApi->GetCheckout($context->cookie->paysonCheckoutId);
+    $cartQuantities = $cart->checkQuantities(true);
+    if ($cartQuantities === TRUE) {
+        // Only get/create PCO2 if all producta are available
+        if ($context->cookie->paysonCheckoutId != Null && canUpdate($callPaysonApi, $context->cookie->paysonCheckoutId) && checkCurrency($currency_order->iso_code, $callPaysonApi, $context->cookie->paysonCheckoutId)) {
+            //Get the checkout object
+            $checkoutTempObj = $callPaysonApi->GetCheckout($context->cookie->paysonCheckoutId);
 
-        $checkoutTempObj = $callPaysonApi->UpdateCheckout(updatePaysonCheckout($checkoutTempObj, $customer, $cart, $payson, $address, $currency_order));
-        $payson->updatePaysonOrderEvents($checkoutTempObj);
-    }
-    else 
-    {
-
-        //Create a new checkout object
-        $checkoutId = $callPaysonApi->CreateCheckout(addPaysonCheckout($customer, $cart, $payson, $currency_order, $context->language->id, $address));
-        $context->cookie->__set('paysonCheckoutId',$checkoutId);
-        //Get the checkout object
-        $checkoutTempObj = $callPaysonApi->GetCheckout($checkoutId);
-        
-        if ($checkoutTempObj->id != null) 
+            $checkoutTempObj = $callPaysonApi->UpdateCheckout(updatePaysonCheckout($checkoutTempObj, $customer, $cart, $payson, $address, $currency_order));
+            $payson->updatePaysonOrderEvents($checkoutTempObj);
+        }
+        else 
         {
-            $payson->createPaysonOrderEvents($checkoutTempObj->id, $cart->id);
+            //Create a new checkout object
+            $checkoutId = $callPaysonApi->CreateCheckout(addPaysonCheckout($customer, $cart, $payson, $currency_order, $context->language->id, $address));
+            $context->cookie->__set('paysonCheckoutId',$checkoutId);
+            //Get the new checkout object
+            $checkoutTempObj = $callPaysonApi->GetCheckout($checkoutId);
+
+            if ($checkoutTempObj->id != null) 
+            {
+                $payson->createPaysonOrderEvents($checkoutTempObj->id, $cart->id);
+            }
         }
     }
     
-    if((isset($_GET["type"]) && $_GET["type"] === 'checkPayson') || (isset($_GET['Email']) && $_GET['Email'] != NULL && $checkoutTempObj->status != "readyToShip"))
-    {       
-       print $checkoutTempObj->snippet; unset($_GET); exit;
+    // One Page Checkout
+    if((isset($_GET["type"]) && $_GET["type"] === 'checkPayson') || (isset($_GET['Email']) && $_GET['Email'] != NULL && $checkoutTempObj->status != "readyToShip")) {   
+        // Make sure all products are still available
+        if (is_array($cartQuantities)) {
+            $returnOutput = '<p class="warning">' . sprintf(Tools::displayError('An item (%1s) in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.'), $cartQuantities['name']) . '</p>';
+        } else {
+            $returnOutput = $checkoutTempObj->snippet; 
+        }
+        // Return PCO2 or error to JS, reset vars and exit
+        print $returnOutput; unset($_GET); exit;
+    }
+    
+    // Multi Page Checkout
+    if (is_array($cartQuantities)) 
+    {
+        // Redirect to checkout
+        Tools::redirect('index.php?controller=order&step=1');
     }
     
     $embeddedUrl = $payson->getSnippetUrl($checkoutTempObj->snippet);
