@@ -17,7 +17,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.1.0.5';
+        $this->version = '1.1.0.6';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -546,10 +546,15 @@ class PaysonCheckout2 extends PaymentModule {
         }
 
         //$cartIdTemp = $ReturnCallUrl == 'ipnCall' ? $this->getCartIdPayson($context->cookie->paysonCheckoutId) : $cart_id;
-	$context = Context::getContext();
-        $cart = new Cart($cart_id);   
-     		
-        $customer = new Customer((int)$cart->id_customer);
+        if (!isset($this->context)) {
+            $this->context = Context::getContext();
+        }
+        $this->context->cart = new Cart((int)$cart_id);
+        
+        $this->context->cart->setDeliveryOption(array($this->context->cart->id_address_delivery => $this->context->cart->id_carrier .','));
+        $this->context->cart->update();  
+
+        $customer = new Customer((int)$this->context->cart->id_customer);
 
         $callPaysonApi = $this->getAPIInstanceMultiShop();
 
@@ -559,17 +564,17 @@ class PaysonCheckout2 extends PaymentModule {
           $checkout = $callPaysonApi->GetCheckout($checkouId); 
        }
        else{
-           $checkout = $callPaysonApi->GetCheckout($context->cookie->paysonCheckoutId);
-           $context->cookie->__set('paysonCheckoutId', NULL);
+           $checkout = $callPaysonApi->GetCheckout($this->context->cookie->paysonCheckoutId);
+           $this->context->cookie->__set('paysonCheckoutId', NULL);
        }
           
-        if ((int)$cart->OrderExists() == false) {
+        if ((int)$this->context->cart->OrderExists() == false) {
             
-            $currency = new Currency($cart->id_currency);
+            $currency = new Currency($this->context->cart->id_currency);
 
             try {
              
-                $total = (float) $cart->getOrderTotal(true, Cart::BOTH) < $checkout->payData->totalPriceIncludingTax + 2 && (float) $cart->getOrderTotal(true, Cart::BOTH) > $checkout->payData->totalPriceIncludingTax - 2? (float) $cart->getOrderTotal(true, Cart::BOTH) : $checkout->payData->totalPriceIncludingTax;
+                $total = (float) $this->context->cart->getOrderTotal(true, Cart::BOTH) < $checkout->payData->totalPriceIncludingTax + 2 && (float) $this->context->cart->getOrderTotal(true, Cart::BOTH) > $checkout->payData->totalPriceIncludingTax - 2? (float) $this->context->cart->getOrderTotal(true, Cart::BOTH) : $checkout->payData->totalPriceIncludingTax;
                 //$total = (float) $cart->getOrderTotal(true, Cart::BOTH);
                 
                 //$total  $checkout->payData->totalPriceIncludingTax
@@ -588,7 +593,7 @@ class PaysonCheckout2 extends PaymentModule {
                         $checkoutCustomerFirstName = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->firstName) > 31 ? mb_strcut($checkout->customer->firstName, 0, 31) : $checkout->customer->firstName));
                         $checkoutCustomerLastName = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->lastName) > 31 ? mb_strcut($checkout->customer->lastName, 0, 31) : $checkout->customer->lastName));
 
-                        $address = new Address(intval($cart->id_address_delivery));
+                        $address = new Address(intval($this->context->cart->id_address_delivery));
                         $address->firstname = $checkoutCustomerFirstName;
                         $address->lastname = $checkout->customer->lastName != NULL ? $checkoutCustomerLastName : $checkoutCustomerFirstName;
                         $address->address1 = $checkout->customer->street;
@@ -599,25 +604,25 @@ class PaysonCheckout2 extends PaymentModule {
                         $address->id_country = Country::getByIso($checkout->customer->countryCode);
                         $address->phone = $checkout->customer->phone;
                         $address->phone_mobile = $checkout->customer->phone;
-                        $address->id_customer = $cart->id_customer;
+                        $address->id_customer = $this->context->cart->id_customer;
                         $address->alias = "Payson account address";
                         $address->update();
 
                         if ($this->PaysonorderExists($checkout->id)) {
 
-                            $this->validateOrder((int) $cart->id, Configuration::get("PAYSONCHECKOUT2_ORDER_STATE_PAID"), $total, $this->displayName, $comment . '<br />', array(), (int) $currency->id, false, $customer->secure_key);
+                            $this->validateOrder((int) $this->context->cart->id, Configuration::get("PAYSONCHECKOUT2_ORDER_STATE_PAID"), $total, $this->displayName, $comment . '<br />', array(), (int) $currency->id, false, $customer->secure_key);
 
                         }
                         if ($checkout->id != Null AND $checkout->status == 'readyToShip') {
                         
-                            if(Configuration::get("PAYSONCHECKOUT2_RECEIPT") == 1 || !$context->customer->isLogged())
+                            if(Configuration::get("PAYSONCHECKOUT2_RECEIPT") == 1 || !$this->context->customer->isLogged())
                             {
                                 $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
                                 Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH') . '%', 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT') . 'px', 'snippetUrl' => $embeddedUrl[0])));
                             }  
                             else
                             {
-                               Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $cart->id . '&id_module=' . $this->id . '&id_order=' . $this->currentOrder . '&key=' . $customer->secure_key);
+                               Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $this->context->cart->id . '&id_module=' . $this->id . '&id_order=' . $this->currentOrder . '&key=' . $customer->secure_key);
                             
                             
                             }
@@ -641,7 +646,7 @@ class PaysonCheckout2 extends PaymentModule {
                         $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect('index.php?controller=order&step=1');
                         break;
                     case "Expired":
-                        $context->cookie->__set('paysonCheckoutId', NULL);
+                        $this->context->cookie->__set('paysonCheckoutId', NULL);
                         $this->updatePaysonOrderEvents($checkout, $cart_id);
                         $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect('index.php?controller=order&step=1');
                         break;
@@ -660,13 +665,13 @@ class PaysonCheckout2 extends PaymentModule {
                 $this->paysonApiError('Please try using a different payment method.');
             }
         } else {
-            $context->cookie->__set('paysonCheckoutId', NULL);
+            $this->context->cookie->__set('paysonCheckoutId', NULL);
             if ($ReturnCallUrl == 'ipnCall') {
                 $this->returnCall(200);
             }
-            $order = Order::getOrderByCartId($cart->id);
+            $order = Order::getOrderByCartId($this->context->cart->id);
 
-            Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $cart->id . '&id_module=' . $this->id . '&id_order=' . $this->currentOrder . '&key=' . $customer->secure_key);
+            Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $this->context->cart->id . '&id_module=' . $this->id . '&id_order=' . $this->currentOrder . '&key=' . $customer->secure_key);
         }
         if ($ReturnCallUrl == 'ipnCall') {
             $this->returnCall(200);
