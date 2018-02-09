@@ -113,7 +113,8 @@ try
             $returnOutput = $checkoutTempObj->snippet; 
         }
         // Return PCO2 or error to JS, reset vars and exit
-        print $returnOutput; unset($_GET); exit;
+		unset($_GET);
+        die($returnOutput);
     }
     
     // Multi Page Checkout
