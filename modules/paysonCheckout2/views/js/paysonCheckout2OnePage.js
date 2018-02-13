@@ -55,22 +55,22 @@ $(document).ready(function(){
         });
     }
 
-    document.addEventListener("PaysonEmbeddedAddressChanged",function(evt) {
-        var address = evt.detail;
-        updatCartAddress(address);
-    });
+//    document.addEventListener("PaysonEmbeddedAddressChanged",function(evt) {
+//        var address = evt.detail;
+//        updatCartAddress(address);
+//    });
 
-    function updatCartAddress(address) {
-        $.ajax({
-           type: "GET",
-           url: baseDir + 'modules/paysonCheckout2/redirect.php',
-           data: address,
-           cache: false,
-           success:function (data) {
-                //$("#iframepayson").html(data);
-           }, cache: false
-        });
-    }
+//    function updatCartAddress(address) {
+//        $.ajax({
+//           type: "GET",
+//           url: baseDir + 'modules/paysonCheckout2/redirect.php',
+//           data: address,
+//           cache: false,
+//           success:function (data) {
+//                //$("#iframepayson").html(data);
+//           }, cache: false
+//        });
+//    }
 
     function sendLockDown() {
         if(document.getElementById('paysonIframe')) {

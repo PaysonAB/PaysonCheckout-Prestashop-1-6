@@ -17,7 +17,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.1.0.8';
+        $this->version = '1.1.0.9';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -553,21 +553,169 @@ class PaysonCheckout2 extends PaymentModule {
         
         $this->context->cart->setDeliveryOption(array($this->context->cart->id_address_delivery => $this->context->cart->id_carrier .','));
         $this->context->cart->update();  
-
-        $customer = new Customer((int)$this->context->cart->id_customer);
-
+ 
         $callPaysonApi = $this->getAPIInstanceMultiShop();
 
         $checkout = null;
-       if($ReturnCallUrl == 'ipnCall')
-       { 
-          $checkout = $callPaysonApi->GetCheckout($checkouId); 
-       }
-       else{
-           $checkout = $callPaysonApi->GetCheckout($this->context->cookie->paysonCheckoutId);
-           $this->context->cookie->__set('paysonCheckoutId', NULL);
-       }
-          
+        if($ReturnCallUrl == 'ipnCall') { 
+            $checkout = $callPaysonApi->GetCheckout($checkouId); 
+        } else {
+            $checkout = $callPaysonApi->GetCheckout($this->context->cookie->paysonCheckoutId);
+            $this->context->cookie->__set('paysonCheckoutId', NULL);
+        }
+        
+        $checkoutCustomerFirstName = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->firstName) > 31 ? mb_strcut($checkout->customer->firstName, 0, 31) : $checkout->customer->firstName));
+        $checkoutCustomerLastName = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->lastName) > 31 ? mb_strcut($checkout->customer->lastName, 0, 31) : $checkout->customer->lastName));
+        
+        if($this->context->customer->isLogged() || $this->context->customer->is_guest) {
+            $customer = new Customer(intval($this->context->cart->id_customer));  
+            $address = new Address(intval($this->context->cart->id_address_invoice));
+
+            $state = NULL;
+            if ($address->id_state)
+                $state = new State(intval($address->id_state));
+
+            if (!Validate::isLoadedObject($address))
+            {
+                Logger::addLog($payson->getL('Payson error: (invalid address)'), 1, NULL, NULL, NULL, true);
+                Tools::redirect('index.php?controller=order&step=1');
+            }
+
+            if (!Validate::isLoadedObject($customer))
+            {
+                Logger::addLog($payson->getL('Payson error: (invalid customer)'), 1, NULL, NULL, NULL, true);
+                Tools::redirect('index.php?controller=order&step=1');
+            }
+        } else {
+            $tempCustomer = Customer::getCustomersByEmail($checkout->customer->email);
+            $customer = NULL;
+            $address = NULL;
+
+            if(count($tempCustomer) > 0) {
+                
+                $customerId = null;
+                foreach ($tempCustomer as $result){
+                     $customerId  = $result['id_customer'];
+                }
+                if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Found existing customer ID: ' . $customerId, 1, NULL, NULL, NULL, true);}
+                $customer = new Customer($customerId); 
+                //Update customer address in PS
+                $existingAddressID = Address::getFirstCustomerAddressId((int)$customerId);
+
+                if (isset($existingAddressID) && $existingAddressID > 0) {
+                    // Found existing address
+                    if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Found customer address ID: ' .$existingAddressID, 1, NULL, NULL, NULL, true);}
+                    $address = new Address(Address::getFirstCustomerAddressId((int)$customerId));
+                } else {
+                    // No exiting address
+                    if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('No exiting customer address.', 1, NULL, NULL, NULL, true);}
+                    $address = new Address();
+                }
+               
+                $address->firstname = $checkoutCustomerFirstName;
+                $address->lastname = $checkoutCustomerLastName != NULL ? $checkoutCustomerLastName : $checkoutCustomerFirstName;
+                $address->address1 = $checkout->customer->street;
+                $address->address2 = '';
+                $address->city = $checkout->customer->city;
+                $address->postcode = $checkout->customer->postalCode;
+                $address->country = Country::getNameById(Configuration::get('PS_LANG_DEFAULT'),Country::getByIso($checkout->customer->countryCode));
+                $address->id_country = Country::getByIso($checkout->customer->countryCode);
+                $address->phone = $checkout->customer->phone;
+                $address->phone_mobile = $checkout->customer->phone;
+                $address->id_customer = $customerId;
+                $address->alias = "Payson account address";
+                
+                if (isset($existingAddressID) && $existingAddressID > 0) {
+                    $address->update();
+                } else {
+                    $address->add();
+                }
+                
+            } else {
+                
+                //This row create a new customer in PS.
+                $customer = new Customer();
+                $password = Tools::passwdGen(8);
+                $customer->is_guest = 1;
+                $customer->passwd = Tools::encrypt($password);
+                $customer->id_default_group = (int) (Configuration::get('PS_CUSTOMER_GROUP', null, $this->context->cart->id_shop));
+                $customer->optin = 0;
+                $customer->active = 1;
+                $customer->id_gender = 9;
+                $customer->email = $checkout->customer->email;
+                $customer->firstname = $checkoutCustomerFirstName;
+                $customer->lastname = $checkoutCustomerLastName != NULL ? $checkoutCustomerLastName : $checkoutCustomerFirstName;
+                $customer->add();
+                if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('No existing customer, created new with ID: ' . $customer->id, 1, NULL, NULL, NULL, true);}
+                //$customer = addPaysonCustomerPS($payson, $this->context->cart->id, $this->context->cookie->paysonCheckoutId, $paysonCustomerInfoToUpdate);
+
+                //This row create a new customer address in PS.
+                $address = new Address();
+                $address->firstname = $checkoutCustomerFirstName;
+                $address->lastname = $checkoutCustomerLastName != NULL ? $checkoutCustomerLastName : $checkoutCustomerFirstName;
+
+                $address->address1 = $checkout->customer->street;
+                $address->address2 = '';
+                $address->city = $checkout->customer->city;
+                $address->postcode = $checkout->customer->postalCode;
+                $address->country = Country::getNameById(Configuration::get('PS_LANG_DEFAULT'),Country::getByIso($checkout->customer->countryCode));
+                $address->id_customer = $customerId;
+                $address->id_country = Country::getByIso($checkout->customer->countryCode);
+                $address->phone = $checkout->customer->phone;
+                $address->phone_mobile = $checkout->customer->phone;
+                //$address->id_state   = (int)$customer->id_state;
+                $address->alias = "Payson account address";
+                $address->add();
+                if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Created new address with ID: ' . $address->id, 1, NULL, NULL, NULL, true);}
+                //$address = addPaysonAddressPS($cart->id, Country::getByIso($paysonCustomerInfoToUpdate['CountryCode']), $paysonCustomerInfoToUpdate, $customer->id);
+            }
+        }
+        
+        $new_delivery_options = array();
+        $new_delivery_options[(int) ($address->id)] = $this->context->cart->id_carrier.',';
+        $new_delivery_options_serialized = serialize($new_delivery_options);
+        
+        $update_sql = 'UPDATE '._DB_PREFIX_.'cart '.
+                        'SET delivery_option=\''.
+                        pSQL($new_delivery_options_serialized).
+                        '\' WHERE id_cart='.
+                        (int) $this->context->cart->id;
+                
+        Db::getInstance()->execute($update_sql);
+
+        if ($this->context->cart->id_carrier > 0) {
+            $this->context->cart->delivery_option = $new_delivery_options_serialized;
+        } else {
+            $this->context->cart->delivery_option = '';
+        }
+        $update_sql = 'UPDATE '._DB_PREFIX_.'cart_product '.
+            'SET id_address_delivery='.(int) $address->id.
+            ' WHERE id_cart='.(int) $this->context->cart->id;
+
+        Db::getInstance()->execute($update_sql);
+        
+        // To refresh/clear cart carrier cache
+        $this->context->cart->getPackageList(true);
+        $this->context->cart->getDeliveryOptionList(null, true);
+        $this->context->cart->getDeliveryOption(null, false, false);
+
+        // Set carrier
+        $this->context->cart->setDeliveryOption($new_delivery_options);
+        
+        $this->context->cart->secure_key = $customer->secure_key;
+        $this->context->cart->id_customer = $customer->id;
+        $this->context->cart->id_address_delivery = $address->id;
+        $this->context->cart->id_address_invoice = $address->id;
+        $this->context->cart->save();
+        
+        $cache_id = 'objectmodel_cart_'.$this->context->cart->id.'*';
+        Cache::clean($cache_id);
+        $this->context->cart = new Cart($this->context->cart->id);
+        
+        //$customer = new Customer((int)$this->context->cart->id_customer);
+
+        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Customer ID: ' . $customer->id, 1, NULL, NULL, NULL, true);}
+        
         if ((int)$this->context->cart->OrderExists() == false) {
             
             $currency = new Currency($this->context->cart->id_currency);
@@ -590,24 +738,8 @@ class PaysonCheckout2 extends PaymentModule {
                         $comment .= $this->l('Paid Cart Id:  ') . $customer->id . "\n";
                         $this->testMode ? $comment .= $this->l('Payment mode:  ') . 'TEST MODE' : '';
 
-                        $checkoutCustomerFirstName = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->firstName) > 31 ? mb_strcut($checkout->customer->firstName, 0, 31) : $checkout->customer->firstName));
-                        $checkoutCustomerLastName = str_replace(array(':',',', ';', '+', '"', "'"), array(' '), (strlen($checkout->customer->lastName) > 31 ? mb_strcut($checkout->customer->lastName, 0, 31) : $checkout->customer->lastName));
-
-                        $address = new Address(intval($this->context->cart->id_address_delivery));
-                        $address->firstname = $checkoutCustomerFirstName;
-                        $address->lastname = $checkout->customer->lastName != NULL ? $checkoutCustomerLastName : $checkoutCustomerFirstName;
-                        $address->address1 = $checkout->customer->street;
-                        $address->address2 = '';
-                        $address->city = $checkout->customer->city;
-                        $address->postcode = $checkout->customer->postalCode;
-                        $address->country = Country::getNameById(Configuration::get('PS_LANG_DEFAULT'),Country::getByIso($checkout->customer->countryCode));
-                        $address->id_country = Country::getByIso($checkout->customer->countryCode);
-                        $address->phone = $checkout->customer->phone;
-                        $address->phone_mobile = $checkout->customer->phone;
-                        $address->id_customer = $this->context->cart->id_customer;
-                        $address->alias = "Payson account address";
-                        $address->update();
-
+                        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Cart delivery address ID: ' . $this->context->cart->id_address_delivery, 1, NULL, NULL, NULL, true);}
+                        
                         if ($this->PaysonorderExists($checkout->id)) {
 
                             $this->validateOrder((int) $this->context->cart->id, Configuration::get("PAYSONCHECKOUT2_ORDER_STATE_PAID"), $total, $this->displayName, $comment . '<br />', array(), (int) $currency->id, false, $customer->secure_key);
