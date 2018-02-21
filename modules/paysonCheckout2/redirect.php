@@ -113,7 +113,7 @@ try
             $returnOutput = $checkoutTempObj->snippet; 
         }
         // Return PCO2 or error to JS, reset vars and exit
-		unset($_GET);
+        unset($_GET);
         die($returnOutput);
     }
     
@@ -124,9 +124,10 @@ try
         Tools::redirect('index.php?controller=order&step=1');
     }
     
-    $embeddedUrl = $payson->getSnippetUrl($checkoutTempObj->snippet);
+    //$embeddedUrl = $payson->getSnippetUrl($checkoutTempObj->snippet);
+     $embeddedUrl = $checkoutTempObj->snippet;
 
-    Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkoutTempObj->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'). '%', 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT').'px', 'snippetUrl' => $embeddedUrl[0])));
+    Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkoutTempObj->id, 'width' => '100%', 'snippetUrl' => $embeddedUrl)));
 } catch (Exception $e) {
 
     if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {

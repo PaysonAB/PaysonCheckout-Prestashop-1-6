@@ -17,7 +17,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.1.0.9';
+        $this->version = '1.1.0.10';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -270,52 +270,46 @@ class PaysonCheckout2 extends PaymentModule {
                         ' . $this->l('Module version: ') . $this->version . '
                     </div><br /><br />
                     
-                    ' . $this->l('Select the mode (Real or Sandbox).') . '<br />
+                    ' . $this->l('Select mode (Production or Sandbox).') . '<br />
                     ' . $this->l('Mode:    ') . '
                     <select name="payson_mode">
-                                    <option value="real"' . (Configuration::get('PAYSONCHECKOUT2_MODE') == 'real' ? ' selected="selected"' : '') . '>' . $this->l('Real') . '&nbsp;&nbsp;</option>
+                                    <option value="real"' . (Configuration::get('PAYSONCHECKOUT2_MODE') == 'real' ? ' selected="selected"' : '') . '>' . $this->l('Production') . '&nbsp;&nbsp;</option>
                                     <option value="sandbox"' . (Configuration::get('PAYSONCHECKOUT2_MODE') == 'sandbox' ? ' selected="selected"' : '') . '>' . $this->l('Sandbox') . '&nbsp;&nbsp;</option>
-                    </select><br />
-                    <strong>' . $this->l($payson_mode_text) . '</strong><br /><br />
+                    </select><br /><br />
 
-                    ' . $this->l('Enter your merchant id for Payson Checkout 2.0') . '<br />
-                    ' . $this->l('merchant id:    ') . '
+                    ' . $this->l('Enter your Agent ID for Payson Checkout 2.0') . '<br />
+                    ' . $this->l('Agent ID:    ') . '
                     <input type="text" size="45" name="merchantid" value="' . htmlentities($merchantid, ENT_COMPAT, 'UTF-8') . '" /><br /><br />
 
                     ' . $this->l('Enter your API-Key for Payson Checkout 2.0') . '<br />
                     ' . $this->l('API-Key:    ') . '
                     <input type="text" size="45" name="apikey" value="' . htmlentities($apikey, ENT_COMPAT, 'UTF-8') . '" /><br /><br />
 
-                    ' . $this->l('Show Receipt Page:    ') .
+                    ' . $this->l('Show receipt page:    ') .
                 '<input type="checkbox" size="45" name="enableReceipt" value="1" ' . ($enableReceipt == "1" ? "checked=checked" : '') . '" /><br /><br />
 
-                    ' . $this->l('Troubleshoot response from Payson Checkout 2.0.') . '<br />
-                    ' . $this->l('Logg:    ') . '
+                    ' . $this->l('Log messages from Payson Checkout 2.0') . '<br />
+                    ' . $this->l('Log:    ') . '
 
                     <select name="payson_log">
                         <option value="yes"' . (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes' ? ' selected="selected"' : '') . '>' . $this->l('Yes') . '&nbsp;&nbsp;</option>
                         <option value="no"' . (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'no' ? ' selected="selected"' : '') . '>' . $this->l('No') . '&nbsp;&nbsp;</option>
                     </select><br /><br />
                     
-                    ' . $this->l('Enable One Page Checkout för Payson Checkout 2.0') . '<br />
+                    ' . $this->l('Enable One Page Checkout for Payson Checkout 2.0') . '<br />
                     ' . $this->l('One Page Checkout :    ') . '
 
                     <select name="payson_onePageCheckout">
                         <option value="yes"' . (Configuration::get('PAYSONCHECKOUT2_ONE') == 'yes' ? ' selected="selected"' : '') . '>' . $this->l('Yes') . '&nbsp;&nbsp;</option>
                         <option value="no"' . (Configuration::get('PAYSONCHECKOUT2_ONE') == 'no' ? ' selected="selected"' : '') . '>' . $this->l('No') . '&nbsp;&nbsp;</option>
                     </select><br /><br />
-                   
-                    ' . $this->l('Graphical user interface:') . '<br /><br />
                         
-                    ' . $this->l('Can be used to add extra customer verification') . '<br />
-                    ' . $this->l('Verification:    ') . ' 
+                    ' . $this->l('Require BankID as verification') . '<br />
+                    ' . $this->l('BankID:    ') . ' 
                     <select name="payson_verification">
-                        <option value="0"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == '0' ? ' selected="selected"' : '') . '>' . $this->l('None') . '&nbsp;&nbsp;</option>
-                        <option value="1"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == '1' ? ' selected="selected"' : '') . '>' . $this->l('Bankid') . '&nbsp;&nbsp;</option>
-                    </select><br /><br />
-                                    ' .
-                $this->l('Enable request phone:') .
-                ' <input type="checkbox" size="45" name="enableRequestPhone" value="1" ' . ($enableRequestPhone == "1" ? "checked=checked" : '') . '" /><br /><br />
+                        <option value="0"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == '0' ? ' selected="selected"' : '') . '>' . $this->l('No') . '&nbsp;&nbsp;</option>
+                        <option value="1"' . (Configuration::get('PAYSONCHECKOUT2_VERIFICATION') == '1' ? ' selected="selected"' : '') . '>' . $this->l('Yes') . '&nbsp;&nbsp;</option>
+                    </select><br /><br />  
 
                     ' . $this->l('Color scheme:    ') . '			
                     <select name="payson_color_scheme">
@@ -330,23 +324,12 @@ class PaysonCheckout2 extends PaymentModule {
                         <option value="WhiteNoFooter"' . (Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME') == 'WhiteNoFooter' ? ' selected="selected"' : '') . '>' . $this->l('WhiteNoFooter') . '&nbsp;&nbsp;</option>
                     </select><br /><br />
 
-                    ' . $this->l('Enter the width of iframe.') . '<br />
-                    ' . $this->l('Size:    ') . '
-                    <input type="text" size="5" name="iframeSizeWidth" value="' . htmlentities($iframeSizeWidth, ENT_COMPAT, 'UTF-8') . '" />
-                    % <br /><br />
-
-                    ' . $this->l('Enter the Height of iframe.') . '<br />
-                    ' . $this->l('Size:    ') . '
-                    <input type="text" size="5" name="iframeSizeHeight" value="' . htmlentities($iframeSizeHeight, ENT_COMPAT, 'UTF-8') . '" />     
-                    px <br /><br />
-                    
-                    ' . $this->l('You can find your logs in Admin | Advanced Parameter -> Logs.') . '<br /><br />
-                    <center><input type="submit" name="submitPayson" value="' . $this->l('Update settings') . '" class="button" /></center>
+                   ' . '<center><input type="submit" name="submitPayson" value="' . $this->l('Update settings') . '" class="button" /></center>
 		</fieldset>
 		</form><br /><br />
 		<fieldset class="width3">
 			<legend><img src="../img/admin/warning.gif" />' . $this->l('Information') . '</legend>'
-                . $this->l('Note that Payson only accept SEK and EUR.') . '<br />
+                . $this->l('Payson Checkout 2.0 accepts SEK and EUR.') . '<br />
 		</fieldset>';
     }
 
@@ -729,9 +712,11 @@ class PaysonCheckout2 extends PaymentModule {
                 
                 switch ($checkout->status) {
                     case "created":           //by Cancel
+                        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Order is created.', 1, NULL, NULL, NULL, true);}
                         Tools::redirect('index.php?controller=order&step=1');
                         break;
                     case "readyToShip":
+                        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Order is readyToShip.', 1, NULL, NULL, NULL, true);}
                         //$checkout->order;
                         $comment = "Checkout ID: " . $checkout->id . "\n";
                         $comment .= "Payson status: " . $checkout->status . "\n";
@@ -749,8 +734,10 @@ class PaysonCheckout2 extends PaymentModule {
                         
                             if(Configuration::get("PAYSONCHECKOUT2_RECEIPT") == 1 || !$this->context->customer->isLogged())
                             {
-                                $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
-                                Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH') . '%', 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT') . 'px', 'snippetUrl' => $embeddedUrl[0])));
+                                //$embeddedUrl = $this->getSnippetUrl($checkout->snippet);
+                                $embeddedUrl = $checkout->snippet;
+                                //Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH') . '%', 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT') . 'px', 'snippetUrl' => $embeddedUrl[0])));
+                                Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => '100%', 'snippetUrl' => $embeddedUrl)));
                             }  
                             else
                             {
@@ -762,22 +749,28 @@ class PaysonCheckout2 extends PaymentModule {
                         }
                         break;
                     case "readyToPay":
+                        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Order is readyToPay.', 1, NULL, NULL, NULL, true);}
                         if ($checkout->id != Null) {
-                            $embeddedUrl = $this->getSnippetUrl($checkout->snippet);
-                            $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH'). '%', 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT') . 'px', 'snippetUrl' => $embeddedUrl[0])));
+                            //$embeddedUrl = $this->getSnippetUrl($checkout->snippet);
+                            $embeddedUrl = $checkout->snippet;
+                            //$ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => '100%', 'snippetUrl' => $embeddedUrl)));
+                            $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect('index.php?controller=order&step=1');
                         }
                         break;
                     case "denied":
-                        $this->validateOrder((int) $cart->id, _PS_OS_CANCELED_, $total, $this->displayName, $comment . '<br />', array(), (int) $currency->id, false, $customer->secure_key);
+                        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Order was denied.', 1, NULL, NULL, NULL, true);}
+                        $this->validateOrder((int) $this->context->cart->id, _PS_OS_CANCELED_, $total, $this->displayName, $comment . '<br />', array(), (int) $currency->id, false, $customer->secure_key);
                         $this->updatePaysonOrderEvents($checkout, $cart_id);
                         
                         $this->paysonApiError($this->l('The payment was denied. Please try using a different payment method.'));
                         break;
                     case "canceled":
+                        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Order was canceled.', 1, NULL, NULL, NULL, true);}
                         $this->updatePaysonOrderEvents($checkout, $cart_id);
                         $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect('index.php?controller=order&step=1');
                         break;
                     case "Expired":
+                        if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes'){PrestaShopLogger::addLog('Order expired.', 1, NULL, NULL, NULL, true);}
                         $this->context->cookie->__set('paysonCheckoutId', NULL);
                         $this->updatePaysonOrderEvents($checkout, $cart_id);
                         $ReturnCallUrl == 'ipnCall' ? $this->returnCall(200) : Tools::redirect('index.php?controller=order&step=1');
