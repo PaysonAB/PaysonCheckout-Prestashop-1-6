@@ -17,7 +17,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.1.0.10';
+        $this->version = '1.1.0.11';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -735,9 +735,13 @@ class PaysonCheckout2 extends PaymentModule {
                             if(Configuration::get("PAYSONCHECKOUT2_RECEIPT") == 1 || !$this->context->customer->isLogged())
                             {
                                 //$embeddedUrl = $this->getSnippetUrl($checkout->snippet);
-                                $embeddedUrl = $checkout->snippet;
+                                //$embeddedUrl = $checkout->snippet;
                                 //Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH') . '%', 'height' => Configuration::get('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT') . 'px', 'snippetUrl' => $embeddedUrl[0])));
-                                Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => '100%', 'snippetUrl' => $embeddedUrl)));
+                                
+                                //$this->context->smarty->assign('snippet', $embeddedUrl);
+                                
+                                //Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id, 'width' => '100%', 'snippetUrl' => $embeddedUrl)));
+                                Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkout->id)));
                             }  
                             else
                             {

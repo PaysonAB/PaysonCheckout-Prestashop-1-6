@@ -1,4 +1,8 @@
 <?php
+include_once(dirname(__FILE__) . '/paysonCheckout2.php');
+include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/paysonEmbedded/paysonapi.php');
+
+
 class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController {
 
     public $ssl = true;
@@ -11,13 +15,19 @@ class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController 
     public function initContent() {
         parent::initContent();
 
+        $payson = new PaysonCheckout2();
+        $callPaysonApi = $payson->getAPIInstanceMultiShop();
+        $checkout = $callPaysonApi->GetCheckout(Tools::getValue('checkoutId'));
+        $snippet = $checkout->snippet;
         $cart = $this->context->cart;
 
+        
+        
 //print_r(Tools::getValue('snippet'));exit;
         $this->context->smarty->assign(
                 array(
                     'checkoutId' => Tools::getValue('checkoutId'),
-                    'snippet'  => Tools::getValue('snippet'),
+                    'snippet'  => $snippet,
                     'cust_currency' => $cart->id_currency,
                     'currencies' => $this->module->getCurrency((int) $cart->id_currency),
                     'total' => $cart->getOrderTotal(true, Cart::BOTH),

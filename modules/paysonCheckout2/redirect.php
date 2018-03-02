@@ -125,9 +125,10 @@ try
     }
     
     //$embeddedUrl = $payson->getSnippetUrl($checkoutTempObj->snippet);
-     $embeddedUrl = $checkoutTempObj->snippet;
-
-    Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkoutTempObj->id, 'width' => '100%', 'snippetUrl' => $embeddedUrl)));
+     //$embeddedUrl = $checkoutTempObj->snippet;
+     //$context->smarty->assign('snippet', $embeddedUrl);
+    //Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkoutTempObj->id, 'width' => '100%', 'snippetUrl' => $embeddedUrl)));
+    Tools::redirect(Context::getContext()->link->getModuleLink('paysonCheckout2', 'payment', array('checkoutId' => $checkoutTempObj->id)));
 } catch (Exception $e) {
 
     if (Configuration::get('PAYSONCHECKOUT2_LOGS') == 'yes') {
