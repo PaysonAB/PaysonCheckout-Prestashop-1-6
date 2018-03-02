@@ -1,5 +1,5 @@
 <?php
-include_once(dirname(__FILE__) . '/paysonCheckout2.php');
+include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/paysonCheckout2.php');
 include_once(_PS_MODULE_DIR_ . 'paysonCheckout2/paysonEmbedded/paysonapi.php');
 
 

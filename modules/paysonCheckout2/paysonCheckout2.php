@@ -17,7 +17,7 @@ class PaysonCheckout2 extends PaymentModule {
     public function __construct() {
         $this->name = 'paysonCheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '1.1.0.11';
+        $this->version = '1.1.0.12';
         $this->currencies = true;
         $this->author = 'Payson AB';
         $this->module_key = '94873fa691622bfefa41af2484650a2e';
@@ -184,8 +184,8 @@ class PaysonCheckout2 extends PaymentModule {
             if (!sizeof($this->_postErrors)) {
                 Configuration::updateValue('PAYSONCHECKOUT2_MERCHANTID', intval($_POST['merchantid']));
                 Configuration::updateValue('PAYSONCHECKOUT2_APIKEY', strval($_POST['apikey']));
-                Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', strval($_POST['iframeSizeWidth']));
-                Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', strval($_POST['iframeSizeHeight']));
+                //Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_WIDTH', strval($_POST['iframeSizeWidth']));
+                //Configuration::updateValue('PAYSONCHECKOUT2_IFRAME_SIZE_HEIGHT', strval($_POST['iframeSizeHeight']));
 
                 if (!isset($_POST['enableReceipt']))
                     Configuration::updateValue('PAYSONCHECKOUT2_RECEIPT', '0');
