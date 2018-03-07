@@ -26,7 +26,7 @@ class PaysonCheckout2 extends PaymentModule
     {
         $this->name = 'paysoncheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '2.0.4';
+        $this->version = '2.0.5';
         $this->ps_versions_compliancy = array('min' => '1.6.0.14', 'max' => _PS_VERSION_);
         $this->author = 'Payson AB';
         $this->module_key = '4015ee54469de01eaa9150b76054547e';
@@ -1020,8 +1020,8 @@ class PaysonCheckout2 extends PaymentModule
         $address->country = Country::getNameById(Configuration::get('PS_LANG_DEFAULT'), $countryId);
         $address->id_customer = $customerId;
         $address->id_country = $countryId;
-        $address->phone = '000000';
-        $address->phone_mobile = '000000';
+        $address->phone = $checkout->customer->phone != null ? $checkout->customer->phone : '000000';
+        $address->phone_mobile = $checkout->customer->phone != null ? $checkout->customer->phone : '000000';
         //$address->id_state   = (int)$customer->id_state;
         $address->alias = $this->l('Payson account address');
         $address->add();

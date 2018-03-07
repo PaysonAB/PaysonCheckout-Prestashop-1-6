@@ -40,8 +40,8 @@ $(document).ready(function() {
         updateCheckout();
     }
 
+	upReq = null;
     function updateCheckout() {
-        upReq = null;
         upReq =  $.ajax({
             type: 'GET',
             url: pcourl,
@@ -99,13 +99,20 @@ $(document).ready(function() {
     }, 1000);
     
     // Validate order on PaysonEmbeddedAddressChanged event
+	valReq = null;
     function validateOrder(callData) {
-        $.ajax({
+        valReq = $.ajax({
             type: 'GET',
             url: validateurl,
             async: true,
             cache: false,
             data: callData,
+			beforeSend: function()
+            { 
+                if (valReq !== null) {
+                    valReq.abort();
+                }
+            },
             success: function(returnData)
             {
                 if (returnData == 'reload') {
