@@ -17,8 +17,8 @@
 	<div class="col-xs-12">
         <p class="payment_module paysoncheckout2tracker" id="paysontracker">
             <a class="payment-payson-checkout2" href="{$link->getModuleLink('paysoncheckout2', 'payment')|escape:'html'}" title="{l s='Pay with Payson via invoice, card, internet bank, partial payment or sms' mod='paysoncheckout2'}">
-                <img src="{$module_template_dir}views/img/p_payment_payson.png" alt="{l s='Pay with Payson Checkout 2.0' mod='paysoncheckout2'}"/>
-                {l s='Pay with Payson via invoice, card, internet bank, partial payment or sms.' mod='paysonCheckout2'}
+                <img src="{$module_template_dir|escape:'htmlall':'UTF-8'}views/img/p_payment_payson.png" alt="{l s='Pay with Payson Checkout 2.0' mod='paysoncheckout2'}"/>
+                {l s='Pay with Payson via invoice, card, internet bank, partial payment or sms.' mod='paysoncheckout2'}
             </a>
         </p>
     </div>

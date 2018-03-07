@@ -37,8 +37,8 @@ $(document).ready(function() {
     }, 800);
     
     // Validate order on PaysonEmbeddedAddressChanged event
-	valReq = null;
     function validateOrder(callData) {
+        valReq = null;
         valReq = $.ajax({
             type: 'GET',
             url: validateurl,

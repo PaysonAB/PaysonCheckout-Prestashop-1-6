@@ -30,7 +30,7 @@
 {block name="content"}
     <section>
         <div id="paysonpaymentwindow">
-            {$snippet nofilter}{* HTML comment, no escaping necessary *}
+            {$snippet nofilter}{* IFRAME, no escaping possible *}
         </div>
     </section>
 {/block}

@@ -130,7 +130,7 @@ class PaysonCheckout2 extends PaymentModule
         if (Configuration::get('PAYSONCHECKOUT2_ONE_PAGE') == 1 && (int) Configuration::get('PS_ORDER_PROCESS_TYPE') == 1) {
             $this->context->controller->addJS(($this->_path) . 'views/js/payson_checkout2_op.js');
         } else {
-            $this->context->controller->addJS(($this->_path) . 'views/js/payson_checkout2.js'); 
+            $this->context->controller->addJS(($this->_path) . 'views/js/payson_checkout2.js');
         }
         $this->context->controller->addCSS(($this->_path) . 'views/css/payson_checkout2.css', 'all');
         
