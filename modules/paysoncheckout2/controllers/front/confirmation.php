@@ -100,7 +100,9 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                         Logger::addLog('New order ID: ' . $orderCreated, 1, null, null, null, true);
                     }
                 } else {
-                    $orderAlreadyCreated = true;
+                    if (_PCO_LOG_) {
+                        Logger::addLog('Order already created.', 1, null, null, null, true);
+                    }
                 }
                 break;
             case 'readyToPay':
@@ -132,27 +134,12 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                 Tools::redirect('index.php');
         }
 
+        // Delete checkout id cookie
+        $this->context->cookie->__set('paysonCheckoutId', null);
+
         $this->context->smarty->assign(array('snippet' => $checkout->snippet));
         
-        if ($orderCreated !== false || $orderAlreadyCreated == true) {
-            // Show CO2 order confirmation
-            if (_PCO_LOG_) {
-                Logger::addLog('Order completed successfully.', 1, null, null, null, true);
-            }
-
-            // Delete checkout id cookie
-            $this->context->cookie->__set('paysonCheckoutId', null);
-
-            $this->setTemplate('payment.tpl');
-        } else {
-            // Show order confirmation with errors
-            if (_PCO_LOG_) {
-                Logger::addLog('Order creation was unsuccessfull.', 1, null, null, null, true);
-            }
-            $this->context->cookie->__set('paysonCheckoutId', null);
-            //$this->context->smarty->assign('payson_error', $this->l('Unable to create order.'));
-            //$this->setTemplate('payment.tpl');
-            Tools::redirect('index.php');
-        }
+        $this->setTemplate('payment.tpl');
+        
     }
 }

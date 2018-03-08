@@ -1045,6 +1045,10 @@ class PaysonCheckout2 extends PaymentModule
         $address->postcode = $checkout->customer->postalCode;
         $address->country = Country::getNameById(Configuration::get('PS_LANG_DEFAULT'), $countryId);
         $address->id_country = Country::getByIso($checkout->customer->countryCode);
+        if ($checkout->customer->phone != null) {
+            $address->phone = $checkout->customer->phone;
+            $address->phone_mobile = $checkout->customer->phone;
+        }
         $address->alias = $this->l('Payson account address');
         $address->update();
         //if (_PCO_LOG_) {
