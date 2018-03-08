@@ -17,15 +17,17 @@
 	<a href="{$link->getPageLink('order', true, NULL, "step=3")|escape:'html':'UTF-8'}" title="{l s='Go back to the Checkout' mod='paysoncheckout2'}">{l s='Checkout' mod='paysoncheckout2'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='Payment' mod='paysoncheckout2'}
 {/capture}
 
-<script type="text/javascript">
-    // <![CDATA[
-    var pcourl = '{$pcoUrl|escape:'javascript':'UTF-8'}';
-    var pco_checkout_id = '{$pco_checkout_id|escape:'javascript':'UTF-8'}';
-    var id_cart = '{$id_cart|intval}';
-    var validateurl = '{$validateUrl|escape:'javascript':'UTF-8'}';
-    var paymenturl = '{$paymentUrl|escape:'javascript':'UTF-8'}';
-    // ]]>
-</script>
+{if isset($pcoUrl)}
+    <script type="text/javascript">
+        // <![CDATA[
+        var pcourl = '{$pcoUrl|escape:'javascript':'UTF-8'}';
+        var pco_checkout_id = '{$pco_checkout_id|escape:'javascript':'UTF-8'}';
+        var id_cart = '{$id_cart|intval}';
+        var validateurl = '{$validateUrl|escape:'javascript':'UTF-8'}';
+        var paymenturl = '{$paymentUrl|escape:'javascript':'UTF-8'}';
+        // ]]>
+    </script>
+{/if}
 
 {block name="content"}
     <section>
