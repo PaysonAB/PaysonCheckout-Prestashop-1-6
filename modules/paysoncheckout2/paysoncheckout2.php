@@ -156,15 +156,13 @@ class PaysonCheckout2 extends PaymentModule
         return false;
     }
 
-    public function checkCurrencyName($cartCurrency, $callPaysonApi, $paysonCheckoutId)
+    public function checkCurrencyName($cartCurrency, $checkoutCurrency)
     {
-        $checkout = $callPaysonApi->GetCheckout($paysonCheckoutId);
-
-        if (Tools::strtoupper($cartCurrency) == Tools::strtoupper($checkout->payData->currency)) {
+        if (Tools::strtoupper($cartCurrency) == Tools::strtoupper($checkoutCurrency)) {
             return true;
-        } else {
-            return false;
-        }
+        } 
+        
+        return false;
     }
 
     public function getContent()
@@ -608,14 +606,13 @@ class PaysonCheckout2 extends PaymentModule
 //        }
 //    }
 
-    public function canUpdate($paysonApi, $paysonCheckoutId)
+    public function canUpdate($checkoutStatus)
     {
-        $checkout = $paysonApi->GetCheckout($paysonCheckoutId);
-        switch ($checkout->status) {
+        switch ($checkoutStatus) {
             case 'created':
                 return true;
             case 'readyToPay':
-                return true;
+                return false;
             case 'processingPayment':
                 return true;
             case 'readyToShip':

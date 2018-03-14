@@ -140,6 +140,5 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
         $this->context->smarty->assign(array('snippet' => $checkout->snippet));
         
         $this->setTemplate('payment.tpl');
-        
     }
 }
