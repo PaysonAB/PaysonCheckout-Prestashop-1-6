@@ -17,10 +17,10 @@ $(document).ready(function() {
     function sendLockDown() {
         if ($('#paysonIframe').length) {
             document.getElementById('paysonIframe').contentWindow.postMessage('lock', '*');
-            if ($('#paysonpaymentwindow').length) {
+            //if ($('#paysonpaymentwindow').length) {
                 // To prevent height flash when iframe reload
-                $('#paysonpaymentwindow').height($('#paysonIframe').height());
-            }
+                //$('#paysonpaymentwindow').height($('#paysonIframe').height());
+            //}
         }
     }
 
@@ -34,7 +34,7 @@ $(document).ready(function() {
         if ($('#paysonpaymentwindow').length) {
             $('#paysonpaymentwindow').height('auto');
         }
-    }, 800);
+    }, 600);
     
     // Validate order on PaysonEmbeddedAddressChanged event
     function validateOrder(callData) {
@@ -60,7 +60,7 @@ $(document).ready(function() {
                         if ($('#paysonpaymentwindow').length) {
                             $('#paysonpaymentwindow').height('auto');
                         }
-                    }, 800);
+                    }, 600);
                     sendRelease();
                 }
             },
