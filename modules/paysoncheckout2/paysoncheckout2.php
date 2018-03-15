@@ -26,7 +26,7 @@ class PaysonCheckout2 extends PaymentModule
     {
         $this->name = 'paysoncheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '2.0.6';
+        $this->version = '2.0.7';
         $this->ps_versions_compliancy = array('min' => '1.6.0.14', 'max' => _PS_VERSION_);
         $this->author = 'Payson AB';
         $this->module_key = '4015ee54469de01eaa9150b76054547e';
@@ -160,7 +160,7 @@ class PaysonCheckout2 extends PaymentModule
     {
         if (Tools::strtoupper($cartCurrency) == Tools::strtoupper($checkoutCurrency)) {
             return true;
-        } 
+        }
         
         return false;
     }
@@ -612,7 +612,7 @@ class PaysonCheckout2 extends PaymentModule
             case 'created':
                 return true;
             case 'readyToPay':
-                return false;
+                return true;
             case 'processingPayment':
                 return true;
             case 'readyToShip':
@@ -661,11 +661,7 @@ class PaysonCheckout2 extends PaymentModule
         $moduleCountries = $this->getModuleAllowedCountries((int) $this->getPaysonModuleID(), (int) $this->context->shop->id);
         if (_PCO_LOG_) {
             Logger::addLog('Language ID: ' . $this->context->language->id, 1, null, null, null, true);
-        }
-        if (_PCO_LOG_) {
             Logger::addLog('Active countries: ' . print_r($activeCountries, true), 1, null, null, null, true);
-        }
-        if (_PCO_LOG_) {
             Logger::addLog('Module countries: ' . print_r($moduleCountries, true), 1, null, null, null, true);
         }
         $allowedDeliveryCountries = array();

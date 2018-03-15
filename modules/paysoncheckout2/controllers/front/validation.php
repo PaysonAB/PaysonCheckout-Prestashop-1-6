@@ -55,14 +55,8 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
 
         if (_PCO_LOG_) {
             Logger::addLog('Checkout ID: ' . $checkout->id, 1, null, null, null, true);
-        }
-        if (_PCO_LOG_) {
             Logger::addLog('Cart ID: ' . $cartId, 1, null, null, null, true);
-        }
-        if (_PCO_LOG_) {
             Logger::addLog('Query: ' . print_r($_REQUEST, true), 1, null, null, null, true);
-        }
-        if (_PCO_LOG_) {
             Logger::addLog('Checkout Status: ' . $checkout->status, 1, null, null, null, true);
         }
 
@@ -91,8 +85,6 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
 
         if (_PCO_LOG_) {
             Logger::addLog('Address ID: ' . $address->id, 1, null, null, null, true);
-        }
-        if (_PCO_LOG_) {
             Logger::addLog('Carrier ID: ' . $cart->id_carrier, 1, null, null, null, true);
         }
 

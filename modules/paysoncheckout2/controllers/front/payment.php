@@ -134,15 +134,15 @@ class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController
                         }
                     } else {
                         Logger::addLog('Unable to retrive checkout.', 3, null, null, null, true);
+                        $this->context->cookie->__set('paysonCheckoutId', null);
                         Tools::redirect('index.php?controller=order&step=1');
                     }
                 } catch (Exception $e) {
-                    Logger::addLog('Unable to get checkout. Message: ' . $e->getMessage(), 3, null, null, null, true);
+                    Logger::addLog('Unable to retrive checkout. Message: ' . $e->getMessage(), 3, null, null, null, true);
                     $this->context->cookie->__set('paysonCheckoutId', null);
                     Tools::redirect('index.php?controller=order&step=1');
                 }
             }
-
 
             $this->context->smarty->assign('payson_errors', null);
 

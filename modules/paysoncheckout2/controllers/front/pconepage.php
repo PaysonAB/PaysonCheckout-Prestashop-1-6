@@ -133,6 +133,10 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                         }
                     }
 
+                    if (_PCO_LOG_) {
+                        Logger::addLog('Checkout status: ' . $checkout->status, 1, null, null, null, true);
+                    }
+                    
                     if ($this->context->cookie->paysonCheckoutId != null && $payson->canUpdate($checkout->status) && $payson->checkCurrencyName($cartCurrency->iso_code, $checkout->payData->currency)) {
                         // Update checkout
                         $checkout = $paysonApi->UpdateCheckout($payson->updatePaysonCheckout($checkout, $customer, $this->context->cart, $payson, $address, $cartCurrency));
@@ -158,16 +162,17 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                         }
                     } else {
                         Logger::addLog('Unable to retrive checkout.', 3, null, null, null, true);
+                        $this->context->cookie->__set('paysonCheckoutId', null);
                         if (Tools::getIsset('pco_update')) {
-                            die('Unable to retrive checkout.');
+                            die('reload');
                         }
                         Tools::redirect('index.php');
                     }
                 } catch (Exception $e) {
-                    Logger::addLog('Unable to get checkout. Message: ' . $e->getMessage(), 3, null, null, null, true);
+                    Logger::addLog('Unable to retrive checkout. Message: ' . $e->getMessage(), 3, null, null, null, true);
                     $this->context->cookie->__set('paysonCheckoutId', null);
                     if (Tools::getIsset('pco_update')) {
-                        die('Unable to retrive checkout.');
+                        die('reload');
                     }
                     Tools::redirect('index.php');
                 }
