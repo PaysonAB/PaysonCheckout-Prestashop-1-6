@@ -144,8 +144,12 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
         // Delete checkout id cookie
         $this->context->cookie->__set('paysonCheckoutId', null);
 
-        $this->context->smarty->assign(array('snippet' => $checkout->snippet));
+        $order = new Order((int) $orderCreated);
+        $this->context->cookie->__set('id_customer', $order->id_customer);
         
+        $this->context->smarty->assign('snippet', $checkout->snippet);
+        $this->context->smarty->assign('HOOK_ORDER_CONFIRMATION', Hook::exec('OrderConfirmation', array('objOrder' => $order)));
+
         $this->setTemplate('payment.tpl');
     }
 }

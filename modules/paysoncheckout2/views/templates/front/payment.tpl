@@ -29,6 +29,10 @@
     </script>
 {/if}
 
+{if isset($HOOK_ORDER_CONFIRMATION)}
+    {$HOOK_ORDER_CONFIRMATION}{* no escaping possible *}
+{/if}
+
 {block name="content"}
     <section>
         <div id="paysonpaymentwindow">
