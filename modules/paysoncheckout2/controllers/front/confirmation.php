@@ -24,16 +24,12 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
     {
         parent::init();
 
-        if (_PCO_LOG_) {
-            Logger::addLog('* ' . __FILE__ . ' -> ' . __METHOD__ . ' *', 1, null, null, null, true);
-            Logger::addLog('Call Type: ' . Tools::getValue('call'), 1, null, null, null, true);
-        }
+        PaysonCheckout2::paysonAddLog('* ' . __FILE__ . ' -> ' . __METHOD__ . ' *', 1, null, null, null, true);
+        PaysonCheckout2::paysonAddLog('Call Type: ' . Tools::getValue('call'), 1, null, null, null, true);
         
         $cartId = (int) Tools::getValue('id_cart');
         if (!isset($cartId)|| $cartId < 1 || $cartId == null) {
-            if (_PCO_LOG_) {
-                Logger::addLog('No cart ID.', 2, null, null, null, true);
-            }
+            PaysonCheckout2::paysonAddLog('No cart ID.', 2, null, null, null, true);
             Tools::redirect('index.php');
         }
 
@@ -43,28 +39,20 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
         if (isset($this->context->cookie->paysonCheckoutId) && $this->context->cookie->paysonCheckoutId != null) {
             // Get checkout ID from cookie
             $checkoutId = $this->context->cookie->paysonCheckoutId;
-            if (_PCO_LOG_) {
-                Logger::addLog('Got checkout ID: ' . $checkoutId . ' from cookie.', 1, null, null, null, true);
-            }
+            PaysonCheckout2::paysonAddLog('Got checkout ID: ' . $checkoutId . ' from cookie.', 1, null, null, null, true);
         } else {
             // Get checkout ID from query
             if (Tools::getIsset('checkout') && Tools::getValue('checkout') != null) {
                 $checkoutId = Tools::getValue('checkout');
-                if (_PCO_LOG_) {
-                    Logger::addLog('Got checkout ID: ' . $checkoutId . ' from query.', 1, null, null, null, true);
-                }
+                PaysonCheckout2::paysonAddLog('Got checkout ID: ' . $checkoutId . ' from query.', 1, null, null, null, true);
             } else {
                 // Get checkout ID from DB
                 $checkoutId = $payson->getPaysonOrderEventId($cartId);
                 if (isset($checkoutId) && $checkoutId != null) {
-                    if (_PCO_LOG_) {
-                        Logger::addLog('Got checkout ID: ' . $checkoutId . ' from DB.', 1, null, null, null, true);
-                    }
+                    PaysonCheckout2::paysonAddLog('Got checkout ID: ' . $checkoutId . ' from DB.', 1, null, null, null, true);
                 } else {
                     // Unable to get checkout ID
-                    if (_PCO_LOG_) {
-                        Logger::addLog('No checkout ID, redirect.', 2, null, null, null, true);
-                    }
+                    PaysonCheckout2::paysonAddLog('No checkout ID, redirect.', 2, null, null, null, true);
                     Tools::redirect('index.php');
                 }
             }
@@ -80,14 +68,12 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
         
         $checkout = $paysonApi->GetCheckout($checkoutId);
 
-        if (_PCO_LOG_) {
-            Logger::addLog('Cart ID: ' . $cart->id, 1, null, null, null, true);
-            Logger::addLog('Cart delivery cost: ' . $cart->getOrderTotal(true, Cart::ONLY_SHIPPING), 1, null, null, null, true);
-            Logger::addLog('Cart total: ' . $cart->getOrderTotal(true, Cart::BOTH), 1, null, null, null, true);
-            Logger::addLog('Checkout ID: ' . $checkout->id, 1, null, null, null, true);
-            Logger::addLog('Checkout total: ' . $checkout->payData->totalPriceIncludingTax, 1, null, null, null, true);
-            Logger::addLog('Checkout Status: ' . $checkout->status, 1, null, null, null, true);
-        }
+        PaysonCheckout2::paysonAddLog('Cart ID: ' . $cart->id, 1, null, null, null, true);
+        PaysonCheckout2::paysonAddLog('Cart delivery cost: ' . $cart->getOrderTotal(true, Cart::ONLY_SHIPPING), 1, null, null, null, true);
+        PaysonCheckout2::paysonAddLog('Cart total: ' . $cart->getOrderTotal(true, Cart::BOTH), 1, null, null, null, true);
+        PaysonCheckout2::paysonAddLog('Checkout ID: ' . $checkout->id, 1, null, null, null, true);
+        PaysonCheckout2::paysonAddLog('Checkout total: ' . $checkout->payData->totalPriceIncludingTax, 1, null, null, null, true);
+        PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout->status, 1, null, null, null, true);
 
         $orderCreated = false;
 
@@ -102,13 +88,9 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                 if ($cart->OrderExists() == false) {
                     // Create PS order
                     $orderCreated = $payson->createOrderPS($cart->id, $checkout);
-                    if (_PCO_LOG_) {
-                        Logger::addLog('New order ID: ' . $orderCreated, 1, null, null, null, true);
-                    }
+                    PaysonCheckout2::paysonAddLog('New order ID: ' . $orderCreated, 1, null, null, null, true);
                 } else {
-                    if (_PCO_LOG_) {
-                        Logger::addLog('Order already created.', 1, null, null, null, true);
-                    }
+                    PaysonCheckout2::paysonAddLog('Order already created.', 1, null, null, null, true);
                     Tools::redirect('index.php');
                 }
                 break;
@@ -136,7 +118,7 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                 Tools::redirect('index.php');
                 break;
             default:
-                Logger::addLog('Unknown Checkout Status: ' . $checkout->status, 2, null, null, null, true);
+                PaysonCheckout2::paysonAddLog('Unknown Checkout Status: ' . $checkout->status, 2, null, null, null, true);
                 //$this->context->cookie->__set('validation_error', $this->l('Unknown order status.'));
                 Tools::redirect('index.php');
         }

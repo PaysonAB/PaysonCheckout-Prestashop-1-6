@@ -24,18 +24,14 @@ class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController
     {
         parent::initContent();
 
-        if (_PCO_LOG_) {
-            Logger::addLog('* ' . __FILE__ . ' -> ' . __METHOD__ . ' *', 1, null, null, null, true);
-        }
+        PaysonCheckout2::paysonAddLog('* ' . __FILE__ . ' -> ' . __METHOD__ . ' *', 1, null, null, null, true);
 
         if (!isset($this->context->cart->id)) {
             Tools::redirect('index.php');
         }
 
         $cartCurrency = new Currency($this->context->cart->id_currency);
-        if (_PCO_LOG_) {
-            Logger::addLog('Cart Currency: ' . $cartCurrency->iso_code, 1, null, null, null, true);
-        }
+        PaysonCheckout2::paysonAddLog('Cart Currency: ' . $cartCurrency->iso_code, 1, null, null, null, true);
 
         if (isset($this->context->cart) && $this->context->cart->nbProducts() > 0) {
             if (!$this->context->cart->checkQuantities()) {
@@ -46,9 +42,7 @@ class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController
 
                 try {
                     $paysonApi = $payson->getPaysonApiInstance();
-                    if (_PCO_LOG_) {
-                        Logger::addLog('API Merchant ID: ' . $paysonApi->getMerchantId(), 1, null, null, null, true);
-                    }
+                    PaysonCheckout2::paysonAddLog('API Merchant ID: ' . $paysonApi->getMerchantId(), 1, null, null, null, true);
                 } catch (Exception $e) {
                     Logger::addLog('API Failure: ' . $e->getMessage(), 3, null, null, null, true);
                     Tools::redirect('index.php?controller=order&step=1');
@@ -58,9 +52,8 @@ class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController
                 $customer = new Customer();
 
                 if ($this->context->customer->isLogged() || $this->context->customer->is_guest) {
-                    if (_PCO_LOG_) {
-                        Logger::addLog($this->context->customer->is_guest == 1 ? 'Customer is: Guest' : 'Customer is: Logged in', 1, null, null, null, true);
-                    }
+                    PaysonCheckout2::paysonAddLog($this->context->customer->is_guest == 1 ? 'Customer is: Guest' : 'Customer is: Logged in', 1, null, null, null, true);
+                    
                     // Customer is logged in or has entered guest address information, we'll use this information
                     $customer = new Customer((int) ($this->context->cart->id_customer));
                     $address = new Address((int) ($this->context->cart->id_address_invoice));
@@ -79,16 +72,11 @@ class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController
                         Logger::addLog('Unable to validate customer.', 3, null, null, null, true);
                         Tools::redirect('index.php?controller=order&step=1');
                     }
-                    //if (_PCO_LOG_) {
-                    //Logger::addLog('Customer: ' . print_r($customer, true), 1, null, null, null, true);
-                    //}
-                    //if (_PCO_LOG_) {
-                    //Logger::addLog('Address: ' . print_r($address, true), 1, null, null, null, true);
-                    //}
+
+                    //PaysonCheckout2::paysonAddLog('Customer: ' . print_r($customer, true), 1, null, null, null, true);
+                    //PaysonCheckout2::paysonAddLog('Address: ' . print_r($address, true), 1, null, null, null, true);
                 } else {
-                    if (_PCO_LOG_) {
-                        Logger::addLog('Customer is not Guest or Logged in', 1, null, null, null, true);
-                    }
+                    PaysonCheckout2::paysonAddLog('Customer is not Guest or Logged in', 1, null, null, null, true);
                 }
 
                 if ((int) Configuration::get('PAYSONCHECKOUT2_ONE_PAGE') == 1) {
@@ -106,9 +94,7 @@ class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController
 
                         // Update data in Payson order table
                         $payson->updatePaysonOrderEvent($checkoutObj, $this->context->cart->id);
-                        if (_PCO_LOG_) {
-                            Logger::addLog('Loaded updated PCO.', 1, null, null, null, true);
-                        }
+                        PaysonCheckout2::paysonAddLog('Loaded updated PCO.', 1, null, null, null, true);
                     } else {
                         // Create a new checkout object
                         $checkoutId = $paysonApi->CreateCheckout($payson->createPaysonCheckout($customer, $this->context->cart, $payson, $cartCurrency, $this->context->language->id, $address));
@@ -121,17 +107,13 @@ class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController
 
                         // Create data in Payson order table
                         $payson->createPaysonOrderEvent($checkoutObj->id, $this->context->cart->id);
-                        if (_PCO_LOG_) {
-                            Logger::addLog('Loaded new PCO.', 1, null, null, null, true);
-                        }
+                        PaysonCheckout2::paysonAddLog('Loaded new PCO.', 1, null, null, null, true);
                     }
 
                     if ($checkoutObj->id != null) {
                         // Get snippet for template
                         $snippet = $checkoutObj->snippet;
-                        if (_PCO_LOG_) {
-                            Logger::addLog('PCO ID: ' . $checkoutObj->id, 1, null, null, null, true);
-                        }
+                        PaysonCheckout2::paysonAddLog('PCO ID: ' . $checkoutObj->id, 1, null, null, null, true);
                     } else {
                         Logger::addLog('Unable to retrive checkout.', 3, null, null, null, true);
                         $this->context->cookie->__set('paysonCheckoutId', null);
@@ -147,9 +129,7 @@ class PaysonCheckout2PaymentModuleFrontController extends ModuleFrontController
             $this->context->smarty->assign('payson_errors', null);
 
             if (isset($this->context->cookie->validation_error) && $this->context->cookie->validation_error != null) {
-                if (_PCO_LOG_) {
-                    Logger::addLog('Redirection error message: ' . $this->context->cookie->validation_error, 1, null, null, null, true);
-                }
+                PaysonCheckout2::paysonAddLog('Redirection error message: ' . $this->context->cookie->validation_error, 1, null, null, null, true);
 
                 $this->context->smarty->assign('payson_errors', $this->context->cookie->validation_error);
 
