@@ -99,6 +99,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     PaysonCheckout2::paysonAddLog('Customer is not Guest or Logged in');
                 }
 
+                $updateCheckout = false;
                 try {
                     if ($this->context->cookie->paysonCheckoutId != null) {
                         // Get checkout
@@ -108,6 +109,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                             $this->context->cookie->__set('paysonCheckoutId', null);
                             PaysonCheckout2::paysonAddLog('Checkout expired, delete cookie.');
                         }
+                        $updateCheckout = true;
                     } else {
                         // Create a new checkout
                         $checkoutId = $paysonApi->CreateCheckout($payson->createPaysonCheckout($customer, $this->context->cart, $payson, $cartCurrency, $this->context->language->id, $address));
@@ -125,7 +127,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
 
                     PaysonCheckout2::paysonAddLog('Checkout status: ' . $checkout->status);
                     
-                    if (Tools::getIsset($checkout->status) && $payson->canUpdate($checkout->status) && $payson->checkCurrencyName($cartCurrency->iso_code, $checkout->payData->currency)) {
+                    if ($updateCheckout && $payson->canUpdate($checkout->status) && $payson->checkCurrencyName($cartCurrency->iso_code, $checkout->payData->currency)) {
                         // Update checkout
                         $checkout = $paysonApi->UpdateCheckout($payson->updatePaysonCheckout($checkout, $customer, $this->context->cart, $payson, $address, $cartCurrency));
 
