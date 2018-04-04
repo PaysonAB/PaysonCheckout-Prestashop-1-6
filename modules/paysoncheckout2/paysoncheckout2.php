@@ -645,15 +645,17 @@ class PaysonCheckout2 extends PaymentModule
         $trackingId = time();
 
         if ((int) Configuration::get('PAYSONCHECKOUT2_ONE_PAGE') == 1 && (int) Configuration::get('PS_ORDER_PROCESS_TYPE') == 1) {
-            $checkoutUri = $this->context->link->getPageLink('order.php?step=3');
+            $checkoutUri = $this->context->link->getPageLink('order', array('step' => '3'));
         } else {
             $checkoutUri = $this->context->link->getModuleLink('paysoncheckout2', 'payment', array('trackingId' => $trackingId, 'id_cart' => $cart->id));
         }
         
         $confirmationUri = $this->context->link->getModuleLink('paysoncheckout2', 'confirmation', array('trackingId' => $trackingId, 'id_cart' => $cart->id, 'call' => 'confirmation'));
         $notificationUri = $this->context->link->getModuleLink('paysoncheckout2', 'notifications', array('trackingId' => $trackingId, 'id_cart' => $cart->id, 'call' => 'notification'));
-        $cms = new CMS((int) (Configuration::get('PS_CONDITIONS_CMS_ID')), (int) ($this->context->cookie->id_lang));
-        $termsUri = $this->context->link->getCMSLink($cms, $cms->link_rewrite, true);
+        
+        $cms = new CMS(Configuration::get('PS_CONDITIONS_CMS_ID'), $this->context->language->id);
+        $termsUri = $this->context->link->getCMSLink($cms, $cms->link_rewrite, Configuration::get('PS_SSL_ENABLED'));
+        
         $validationUri = null;
 
         $paysonMerchant = new PaysonEmbedded\Merchant($checkoutUri, $confirmationUri, $notificationUri, $termsUri, null, $payson->moduleVersion);
@@ -1070,6 +1072,7 @@ class PaysonCheckout2 extends PaymentModule
         $total_shipping_wot = 0;
         $carrier = new Carrier($cart->id_carrier, $cart->id_lang);
 
+         $shippingToSubtractFromDiscount = 0;
         if ($total_shipping_wt > 0) {
             $carriertax = Tax::getCarrierTaxRate((int) $carrier->id, $cart->id_address_invoice);
             $carriertax_rate = $carriertax / 100;
@@ -1077,7 +1080,7 @@ class PaysonCheckout2 extends PaymentModule
             $total_shipping_wot = $total_shipping_wt / $forward_vat;
 
             if (!empty($cartDiscounts) && (!empty($cartDiscounts[0]['obj'])) && $cartDiscounts[0]['obj']->free_shipping) {
-                $totoalCalc = 0;
+                $shippingToSubtractFromDiscount = $total_shipping_wt;
             } else {
                 $orderitemslist[] = new PaysonEmbedded\OrderItem(isset($carrier->name) ? $carrier->name : $this->l('Shipping'), $total_shipping_wt, 1, number_format($carriertax_rate, 2, '.', ''), $this->l('Shipping'), PaysonEmbedded\OrderItemType::SERVICE);
             }
@@ -1096,18 +1099,18 @@ class PaysonCheckout2 extends PaymentModule
             $value_tax_exc = $cart_rule["value_tax_exc"];
 
             if ($has_different_rates == false) {
-                $discount_tax_rate = Tools::ps_round($lastrate, 2);
+                $discount_tax_rate = Tools::ps_round($lastrate, $cur * _PS_PRICE_DISPLAY_PRECISION_);
             } else {
                 $discount_tax_rate = (($value_real / $value_tax_exc) - 1) * 100;
 
-                $discount_tax_rate = Tools::ps_round($discount_tax_rate, 2);
+                $discount_tax_rate = Tools::ps_round($discount_tax_rate, $cur * _PS_PRICE_DISPLAY_PRECISION_);
             }
 
             if ($totalCartValue <= $total_discounts) {
                 $value_real = 0;
             }
 
-            $orderitemslist[] = new PaysonEmbedded\OrderItem($cart_rule["name"], -(Tools::ps_round($value_real, 2)), 1, number_format(($discount_tax_rate * 0.01), 4, '.', ''), $this->l('Discount'), PaysonEmbedded\OrderItemType::DISCOUNT);
+            $orderitemslist[] = new PaysonEmbedded\OrderItem($cart_rule["name"], -(Tools::ps_round(($value_real - $shippingToSubtractFromDiscount), $cur * _PS_PRICE_DISPLAY_PRECISION_)), 1, number_format(($discount_tax_rate * 0.01), 4, '.', ''), $this->l('Discount'), PaysonEmbedded\OrderItemType::DISCOUNT);
             $total_discounts += $value_real;
         }
 
