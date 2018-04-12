@@ -52,14 +52,23 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
         if (isset($this->context->cart) && $this->context->cart->nbProducts() > 0) {
             $cartQuantities = $this->context->cart->checkQuantities(true);
             if ($cartQuantities !== true) {
-                //$this->context->cookie->__set('validation_error', sprintf('An item (%1s) in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.', $cartQuantities['name']));
-                $this->context->cookie->__set('validation_error', 'An item in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.');
-                $this->context->cookie->__set('paysonCheckoutId', null);
+                $errMess = $this->module->l('An item', 'pconepage') . ' (' . $cartQuantities['name'] . ') ' . $this->module->l('in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.', 'pconepage');
+                
+                if (Tools::getIsset('pco_update')) {
+                    die('<p class="warning">' . $errMess . '</p>');
+                }
+                $this->context->cookie->__set('validation_error', $errMess);
+                //$this->context->cookie->__set('paysonCheckoutId', null);
             } else {
                 $min_purchase = Tools::convertPrice((float) Configuration::get('PS_PURCHASE_MINIMUM'), $cartCurrency);
                 if ($this->context->cart->getOrderTotal(false, Cart::ONLY_PRODUCTS) < $min_purchase) {
-                    $this->context->cookie->__set('validation_error', 'This order does not meet the requirement for minimum order value.');
-                    //Tools::redirect('index.php?fc=module&module=paysoncheckout2&controller=pconepage');
+                    $errMess = $this->module->l('This order does not meet the requirement for minimum order value.', 'pconepage');
+                    
+                    if (Tools::getIsset('pco_update')) {
+                        die('<p class="warning">' . $errMess . '</p>');
+                    }
+                    $this->context->cookie->__set('validation_error', $errMess);
+                    //Tools::redirect('order?step=1');
                 }
 
                 require_once(_PS_MODULE_DIR_ . 'paysoncheckout2/paysoncheckout2.php');
@@ -124,7 +133,9 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                                 if ($payson->validPaysonCurrency($cartCurrency->iso_code)) {
                                     die('reload');
                                 } else {
-                                    die('Error: Invalid currency');
+                                    $errMess = $this->module->l('Unsupported currency. Please use SEK or EUR.', 'pconepage');
+                                    PaysonCheckout2::paysonAddLog($errMess);
+                                    die('<p class="warning">' . $errMess . '</p>');
                                 }
                             }
                             Tools::redirect('index.php');
@@ -154,7 +165,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                         Logger::addLog('Unable to retrive checkout.', 3);
                         $this->context->cookie->__set('paysonCheckoutId', null);
                         if (Tools::getIsset('pco_update')) {
-                            die('Unable to retrive checkout.');
+                            die('<p class="warning">' . $this->module->l('Unable to retrive checkout.', 'pconepage') . '</p>');
                         }
                         Tools::redirect('index.php');
                     }
@@ -162,7 +173,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     Logger::addLog('Unable to retrive checkout. Message: ' . $e->getMessage(), 3);
                     $this->context->cookie->__set('paysonCheckoutId', null);
                     if (Tools::getIsset('pco_update')) {
-                        die('Unable to retrive checkout: ' . $e->getMessage());
+                        die('<p class="warning">' . $this->module->l('Unable to retrive checkout.', 'pconepage') . $e->getMessage() . '</p>');
                     }
                     Tools::redirect('index.php');
                 }
@@ -172,10 +183,24 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
             $this->context->cart->getSummaryDetails();
 
             //PaysonCheckout2::paysonAddLog('Cart Summary: ' . print_r($cartSummary, true), 1, null, null, null, true);
+            
+            $this->context->smarty->assign('payson_errors', null);
+
+            $errMess = '';
+            if (isset($this->context->cookie->validation_error) && $this->context->cookie->validation_error != null) {
+                PaysonCheckout2::paysonAddLog('Redirection error message: ' . $this->context->cookie->validation_error);
+
+                $this->context->smarty->assign('payson_errors', $this->context->cookie->validation_error);
+
+                $errMess = '<p class="warning">' . $this->context->cookie->validation_error . '</p>';
+                
+                // Delete old messages
+                $this->context->cookie->__set('validation_error', null);
+            }
 
             // AJAX call should have pco_update set to 1, die and return snippet
             if (Tools::getIsset('pco_update')) {
-                die($snippet);
+                die($errMess . $snippet);
             }
 
             $wrapping_fees_tax_inc = $this->context->cart->getGiftWrappingPrice(true);
@@ -226,17 +251,6 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
             }
 
             PaysonCheckout2::paysonAddLog('Delivery option: ' . print_r($delivery_options, true));
-
-            $this->context->smarty->assign('payson_errors', null);
-
-            if (isset($this->context->cookie->validation_error) && $this->context->cookie->validation_error != null) {
-                PaysonCheckout2::paysonAddLog('Redirection error message: ' . $this->context->cookie->validation_error);
-
-                $this->context->smarty->assign('payson_errors', $this->context->cookie->validation_error);
-
-                // Delete old messages
-                $this->context->cookie->__set('validation_error', null);
-            }
 
             $this->context->smarty->assign(array(
                 'payson_checkout' => $snippet,
