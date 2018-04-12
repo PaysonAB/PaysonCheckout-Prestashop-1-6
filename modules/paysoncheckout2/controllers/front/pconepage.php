@@ -52,13 +52,13 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
         if (isset($this->context->cart) && $this->context->cart->nbProducts() > 0) {
             $cartQuantities = $this->context->cart->checkQuantities(true);
             if ($cartQuantities !== true) {
-                //$this->context->cookie->__set('validation_error', $this->l(sprintf('An item (%1s) in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.', $cartQuantities['name'])));
-                $this->context->cookie->__set('validation_error', $this->l('An item in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.'));
+                //$this->context->cookie->__set('validation_error', sprintf('An item (%1s) in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.', $cartQuantities['name']));
+                $this->context->cookie->__set('validation_error', 'An item in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.');
                 $this->context->cookie->__set('paysonCheckoutId', null);
             } else {
                 $min_purchase = Tools::convertPrice((float) Configuration::get('PS_PURCHASE_MINIMUM'), $cartCurrency);
                 if ($this->context->cart->getOrderTotal(false, Cart::ONLY_PRODUCTS) < $min_purchase) {
-                    $this->context->cookie->__set('validation_error', $this->l('This order does not meet the requirement for minimum order value.'));
+                    $this->context->cookie->__set('validation_error', 'This order does not meet the requirement for minimum order value.');
                     //Tools::redirect('index.php?fc=module&module=paysoncheckout2&controller=pconepage');
                 }
 
@@ -252,7 +252,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                 'PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS' => (int) Configuration::get('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS')
             ));
         } else {
-            $this->context->smarty->assign('payson_errors', $this->l('Your cart is empty.'));
+            $this->context->smarty->assign('payson_errors', 'Your cart is empty.');
         }
 
         // All done, lets checkout!
