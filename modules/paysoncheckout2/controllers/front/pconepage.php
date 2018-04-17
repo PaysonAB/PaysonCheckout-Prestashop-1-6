@@ -25,262 +25,244 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
     public function initContent()
     {
         parent::initContent();
-
         PaysonCheckout2::paysonAddLog('* ' . __FILE__ . ' -> ' . __METHOD__ . ' *');
         
-        if (!isset($this->context->cart->id) || $this->context->cart->nbProducts() < 1) {
-            if (Tools::getIsset('pco_update')) {
-                die('reload');
-            }
-            Tools::redirect('index.php');
-        }
-
-        // Set delivery option on cart if needed
-        if (!$this->context->cart->getDeliveryOption(null, true)) {
-            $this->context->cart->setDeliveryOption($this->context->cart->getDeliveryOption());
-            $this->context->cart->save();
-            PaysonCheckout2::paysonAddLog('Added default delivery: ' . print_r($this->context->cart->getDeliveryOption(), true));
-        }
-
-        // Check if rules apply
-        CartRule::autoRemoveFromCart($this->context);
-        CartRule::autoAddToCart($this->context);
-
-        $cartCurrency = new Currency($this->context->cart->id_currency);
-        PaysonCheckout2::paysonAddLog('Cart Currency: ' . $cartCurrency->iso_code);
-
-        if (isset($this->context->cart) && $this->context->cart->nbProducts() > 0) {
-            $cartQuantities = $this->context->cart->checkQuantities(true);
-            if ($cartQuantities !== true) {
-                $errMess = $this->module->l('An item', 'pconepage') . ' (' . $cartQuantities['name'] . ') ' . $this->module->l('in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.', 'pconepage');
-                
-                if (Tools::getIsset('pco_update')) {
-                    die('<p class="warning">' . $errMess . '</p>');
+        $errMess = false;
+        try {
+            // Class PaysonCheckout2
+            require_once(_PS_MODULE_DIR_ . 'paysoncheckout2/paysoncheckout2.php');
+            $payson = new PaysonCheckout2();
+            
+            if (isset($this->context->cart) && $this->context->cart->nbProducts() > 0) {
+                // Set default delivery option on cart if needed
+                if (!$this->context->cart->getDeliveryOption(null, true)) {
+                    $this->context->cart->setDeliveryOption($this->context->cart->getDeliveryOption());
+                    $this->context->cart->save();
+                    PaysonCheckout2::paysonAddLog('Added default delivery: ' . print_r($this->context->cart->getDeliveryOption(), true));
                 }
-                $this->context->cookie->__set('validation_error', $errMess);
-                //$this->context->cookie->__set('paysonCheckoutId', null);
-            } else {
+                
+                // Check if rules apply
+                CartRule::autoRemoveFromCart($this->context);
+                CartRule::autoAddToCart($this->context);
+                
+                // Get cart currency
+                $cartCurrency = new Currency($this->context->cart->id_currency);
+                PaysonCheckout2::paysonAddLog('Cart Currency: ' . $cartCurrency->iso_code);
+                
+                // Check cart currency
+                if (!$payson->validPaysonCurrency($cartCurrency->iso_code)) {
+                    $errMess = $this->module->l('Unsupported currency. Please use SEK or EUR.', 'pconepage');
+                }
+                
+                // Check cart products stock levels
+                $cartQuantities = $this->context->cart->checkQuantities(true);
+                if ($cartQuantities !== true) {
+                    $errMess = $this->module->l('An item', 'pconepage') . ' (' . $cartQuantities['name'] . ') ' . $this->module->l('in your cart is no longer available in this quantity. You cannot proceed with your order until the quantity is adjusted.', 'pconepage');
+                }
+                
+                // Check minimun order value
                 $min_purchase = Tools::convertPrice((float) Configuration::get('PS_PURCHASE_MINIMUM'), $cartCurrency);
                 if ($this->context->cart->getOrderTotal(false, Cart::ONLY_PRODUCTS) < $min_purchase) {
                     $errMess = $this->module->l('This order does not meet the requirement for minimum order value.', 'pconepage');
-                    
-                    if (Tools::getIsset('pco_update')) {
-                        die('<p class="warning">' . $errMess . '</p>');
-                    }
-                    $this->context->cookie->__set('validation_error', $errMess);
-                    //Tools::redirect('order?step=1');
                 }
-
-                require_once(_PS_MODULE_DIR_ . 'paysoncheckout2/paysoncheckout2.php');
-                $payson = new PaysonCheckout2();
-
-                try {
-                    $paysonApi = $payson->getPaysonApiInstance();
-                    PaysonCheckout2::paysonAddLog('Payson API Merchant ID: ' . $paysonApi->getMerchantId());
-                } catch (Exception $e) {
-                    Logger::addLog('Payson API Failure: ' . $e->getMessage(), 3);
-                    Tools::redirect('index.php');
-                }
-
-                // URL:s for JS/AJAX call, added to tpl
-                $pcoUrl = $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true);
-                $validateUrl = $this->context->link->getModuleLink('paysoncheckout2', 'validation', array(), true);
-
-                $address = new Address();
-                $customer = new Customer();
-
+                
+                // Check customer and address
                 if ($this->context->customer->isLogged() || $this->context->customer->is_guest) {
                     PaysonCheckout2::paysonAddLog($this->context->customer->is_guest == 1 ? 'Customer is: Guest' : 'Customer is: Logged in');
                     // Customer is logged in or has entered guest address information, we'll use this information
                     $customer = new Customer((int) ($this->context->cart->id_customer));
                     $address = new Address((int) ($this->context->cart->id_address_invoice));
 
-//                    $state = null;
                     if ($address->id_state) {
                         $state = new State((int) ($address->id_state));
                     }
 
                     if (!Validate::isLoadedObject($customer)) {
-                        Logger::addLog('Unable to validate customer.', 3);
-                        Tools::redirect('index.php');
+                        $errMess = $this->module->l('Unable to validate customer. Please try again.', 'pconepage');
                     }
                 } else {
                     PaysonCheckout2::paysonAddLog('Customer is not Guest or Logged in');
+                    // Create new customer and address
+                    $address = new Address();
+                    $customer = new Customer();
+                }
+                
+                // Refresh cart summary
+                $this->context->cart->getSummaryDetails();
+                $this->assignSummaryInformations();
+                
+                // Get delivery options
+                //$checkoutSession = $this->getCheckoutSession();
+                //$delivery_options = $checkoutSession->getDeliveryOptions();
+                //$delivery_options_finder_core = new DeliveryOptionsFinder($this->context, $this->getTranslator(), $this->objectPresenter, new PriceFormatter());
+                //$delivery_option = $delivery_options_finder_core->getSelectedDeliveryOption();
+
+                // Free shipping cart rule
+                $free_shipping = false;
+                foreach ($this->context->cart->getCartRules() as $rule) {
+                    if ($rule['free_shipping']) {
+                        $free_shipping = true;
+                        break;
+                    }
                 }
 
-                try {
-                    if ($this->context->cookie->paysonCheckoutId != null) {
-                        // Get checkout
-                        $checkout = $paysonApi->GetCheckout($this->context->cookie->paysonCheckoutId);
-                        PaysonCheckout2::paysonAddLog('Get checkout.');
-                        if ($checkout->status == 'expired') {
-                            $this->context->cookie->__set('paysonCheckoutId', null);
-                            PaysonCheckout2::paysonAddLog('Checkout expired, delete cookie.');
-                        }
-                        
-                        if ($payson->canUpdate($checkout->status) && $payson->checkCurrencyName($cartCurrency->iso_code, $checkout->payData->currency) && ($payson->languagePayson(Language::getIsoById($this->context->language->id)) == $payson->languagePayson($checkout->gui->locale))) {
+                // Free shipping based on order total
+                $configuration = Configuration::getMultiple(array('PS_SHIPPING_FREE_PRICE', 'PS_SHIPPING_FREE_WEIGHT'));
+                if (isset($configuration['PS_SHIPPING_FREE_PRICE']) && $configuration['PS_SHIPPING_FREE_PRICE'] > 0) {
+                    $free_fees_price = Tools::convertPrice((float) $configuration['PS_SHIPPING_FREE_PRICE'], Currency::getCurrencyInstance((int) $this->context->cart->id_currency));
+                    $orderTotalwithDiscounts = $this->context->cart->getOrderTotal(true, Cart::BOTH_WITHOUT_SHIPPING, null, null, false);
+                    $left_to_get_free_shipping = ($free_fees_price - $orderTotalwithDiscounts);
+                    $this->context->smarty->assign('left_to_get_free_shipping', $left_to_get_free_shipping);
+                }
+
+                // Free shipping based on order weight
+                if (isset($configuration['PS_SHIPPING_FREE_WEIGHT']) && $configuration['PS_SHIPPING_FREE_WEIGHT'] > 0) {
+                    $free_fees_weight = $configuration['PS_SHIPPING_FREE_WEIGHT'];
+                    $total_weight = $this->context->cart->getTotalWeight();
+                    $left_to_get_free_shipping_weight = $free_fees_weight - $total_weight;
+                    $this->context->smarty->assign('left_to_get_free_shipping_weight', $left_to_get_free_shipping_weight);
+                }
+                
+                // Assign smarty tpl variables
+                $this->context->smarty->assign(array(
+                    'discounts' => $this->context->cart->getCartRules(),
+                    'cart_is_empty' => false,
+                    'gift' => $this->context->cart->gift,
+                    'gift_message' => $this->context->cart->gift_message,
+                    'giftAllowed' => (int) (Configuration::get('PS_GIFT_WRAPPING')),
+                    'gift_wrapping_price' => Tools::convertPrice($this->context->cart->getGiftWrappingPrice(true), $cartCurrency),
+                    'message' => Message::getMessageByCartId((int) ($this->context->cart->id)),
+                    'id_cart' => $this->context->cart->id,
+                    'controllername' => 'pconepage',
+                    'free_shipping' => $free_shipping,
+                    'id_lang' => $this->context->language->id,
+                    'token_cart' => $this->context->cart->secure_key,
+                    'id_address' => $this->context->cart->id_address_delivery,
+                    //'delivery_options' => $delivery_options,
+                    //'delivery_option' => $delivery_option,
+                    'pcoUrl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true),
+                    'validateUrl' => $this->context->link->getModuleLink('paysoncheckout2', 'validation', array(), true),
+                    'paymentUrl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true),
+                ));
+
+                // Check for error and exit if any
+                if ($errMess !== false) {
+                    throw new Exception($errMess);
+                }
+                
+                // Initiate Payson API
+                $paysonApi = $payson->getPaysonApiInstance();
+                PaysonCheckout2::paysonAddLog('Payson API initiated. Agent ID: ' . $paysonApi->getMerchantId());
+
+                $getCheckout = $this->getCheckout($payson, $paysonApi, $customer, $cartCurrency, $address);
+                $checkout = $getCheckout['checkout'];
+                $isNewCheckout = $getCheckout['newcheckout'];
+
+                if (!$isNewCheckout) {
+                    // Check if we need to create a new checkout if language or currency differs between cart and checkout
+                    if (!$payson->checkCurrencyName($cartCurrency->iso_code, $checkout->payData->currency) || ($payson->languagePayson(Language::getIsoById($this->context->language->id)) !== $payson->languagePayson($checkout->gui->locale))) {
+                        $this->context->cookie->__set('paysonCheckoutId', null);
+                        $getCheckout = $this->getCheckout($payson, $paysonApi, $customer, $cartCurrency, $address);
+                        $checkout = $getCheckout['checkout'];
+                        $isNewCheckout = $getCheckout['newcheckout'];
+                    } else {
+                        if ($payson->canUpdate($checkout->status)) {
                             // Update checkout
                             $checkout = $paysonApi->UpdateCheckout($payson->updatePaysonCheckout($checkout, $customer, $this->context->cart, $payson, $address, $cartCurrency));
-
-                            // Update data in Payson order table
-                            $payson->updatePaysonOrderEvent($checkout, $this->context->cart->id);
-                            PaysonCheckout2::paysonAddLog('Update checkout.');
                         } else {
+                            // E.g for expired checkouts
                             $this->context->cookie->__set('paysonCheckoutId', null);
-                            PaysonCheckout2::paysonAddLog('Checkout expired, delete cookie.');
-                            
-                            if (Tools::getIsset('pco_update')) {
-                                if ($payson->validPaysonCurrency($cartCurrency->iso_code)) {
-                                    die('reload');
-                                } else {
-                                    $errMess = $this->module->l('Unsupported currency. Please use SEK or EUR.', 'pconepage');
-                                    PaysonCheckout2::paysonAddLog($errMess);
-                                    die('<p class="warning">' . $errMess . '</p>');
-                                }
-                            }
-                            Tools::redirect('index.php');
                         }
-                    } else {
-                        // Create a new checkout
-                        $checkoutId = $paysonApi->CreateCheckout($payson->createPaysonCheckout($customer, $this->context->cart, $payson, $cartCurrency, $this->context->language->id, $address));
-
-                        //Get checkout
-                        $checkout = $paysonApi->GetCheckout($checkoutId);
-                        
-                        // Save data in Payson order table
-                        $payson->createPaysonOrderEvent($checkout->id, $this->context->cart->id);
-                        PaysonCheckout2::paysonAddLog('Create checkout.');
-                        
-                        $this->context->cookie->__set('paysonCheckoutId', $checkout->id);
-                        PaysonCheckout2::paysonAddLog('Save cookie.');
                     }
-
-                    PaysonCheckout2::paysonAddLog('Checkout status: ' . $checkout->status);
-
-                    if ($checkout->id != null) {
-                        // Get snippet for template
-                        $snippet = $checkout->snippet;
-                        PaysonCheckout2::paysonAddLog('PCO ID: ' . $checkout->id);
-                    } else {
-                        Logger::addLog('Unable to retrive checkout.', 3);
-                        $this->context->cookie->__set('paysonCheckoutId', null);
-                        if (Tools::getIsset('pco_update')) {
-                            die('<p class="warning">' . $this->module->l('Unable to retrive checkout.', 'pconepage') . '</p>');
-                        }
-                        Tools::redirect('index.php');
-                    }
-                } catch (Exception $e) {
-                    Logger::addLog('Unable to retrive checkout. Message: ' . $e->getMessage(), 3);
-                    $this->context->cookie->__set('paysonCheckoutId', null);
-                    if (Tools::getIsset('pco_update')) {
-                        die('<p class="warning">' . $this->module->l('Unable to retrive checkout.', 'pconepage') . $e->getMessage() . '</p>');
-                    }
-                    Tools::redirect('index.php');
                 }
-            }
-
-            // Refresh cart summary
-            $this->context->cart->getSummaryDetails();
-
-            //PaysonCheckout2::paysonAddLog('Cart Summary: ' . print_r($cartSummary, true), 1, null, null, null, true);
-            
-            $this->context->smarty->assign('payson_errors', null);
-
-            $errMess = '';
-            if (isset($this->context->cookie->validation_error) && $this->context->cookie->validation_error != null) {
-                PaysonCheckout2::paysonAddLog('Redirection error message: ' . $this->context->cookie->validation_error);
-
-                $this->context->smarty->assign('payson_errors', $this->context->cookie->validation_error);
-
-                $errMess = '<p class="warning">' . $this->context->cookie->validation_error . '</p>';
                 
-                // Delete old messages
-                $this->context->cookie->__set('validation_error', null);
-            }
+                // Assign some more smarty tpl variables
+                $this->context->smarty->assign(array(
+                    'pco_checkout_id' => $checkout->id,
+                    'payson_checkout' => $checkout->snippet,
+                ));
 
-            // AJAX call should have pco_update set to 1, die and return snippet
-            if (Tools::getIsset('pco_update')) {
-                die($errMess . $snippet);
-            }
-
-            $wrapping_fees_tax_inc = $this->context->cart->getGiftWrappingPrice(true);
-
-            // Assign tpl variables
-            //$this->context->smarty->assign('payson_checkout', $snippet);
-            $this->context->smarty->assign('discounts', $this->context->cart->getCartRules());
-            $this->context->smarty->assign('cart_is_empty', false);
-            $this->context->smarty->assign('gift', $this->context->cart->gift);
-            $this->context->smarty->assign('gift_message', $this->context->cart->gift_message);
-            $this->context->smarty->assign('giftAllowed', (int) (Configuration::get('PS_GIFT_WRAPPING')));
-            $this->context->smarty->assign('gift_wrapping_price', Tools::convertPrice($wrapping_fees_tax_inc, $cartCurrency));
-            $this->context->smarty->assign('message', Message::getMessageByCartId((int) ($this->context->cart->id)));
-            $this->context->smarty->assign('pco_checkout_id', $checkout->id);
-            $this->context->smarty->assign('id_cart', $this->context->cart->id);
-
-            $free_fees_price = 0;
-            $configuration = Configuration::getMultiple(array('PS_SHIPPING_FREE_PRICE', 'PS_SHIPPING_FREE_WEIGHT'));
-
-            if (isset($configuration['PS_SHIPPING_FREE_PRICE']) && $configuration['PS_SHIPPING_FREE_PRICE'] > 0) {
-                $free_fees_price = Tools::convertPrice((float) $configuration['PS_SHIPPING_FREE_PRICE'], Currency::getCurrencyInstance((int) $this->context->cart->id_currency));
-                $orderTotalwithDiscounts = $this->context->cart->getOrderTotal(true, Cart::BOTH_WITHOUT_SHIPPING, null, null, false);
-                $left_to_get_free_shipping = ($free_fees_price - $orderTotalwithDiscounts);
-                $this->context->smarty->assign('left_to_get_free_shipping', $left_to_get_free_shipping);
-            }
-
-            if (isset($configuration['PS_SHIPPING_FREE_WEIGHT']) && $configuration['PS_SHIPPING_FREE_WEIGHT'] > 0) {
-                $free_fees_weight = $configuration['PS_SHIPPING_FREE_WEIGHT'];
-                $total_weight = $this->context->cart->getTotalWeight();
-                $left_to_get_free_shipping_weight = $free_fees_weight - $total_weight;
-                $this->context->smarty->assign('left_to_get_free_shipping_weight', $left_to_get_free_shipping_weight);
-            }
-
-            $this->assignSummaryInformations();
-
-            $checkoutSession = $this->getCheckoutSession();
-
-            $delivery_options = $checkoutSession->getDeliveryOptions();
-            $delivery_options_finder_core = new DeliveryOptionsFinder($this->context, $this->getTranslator(), $this->objectPresenter, new PriceFormatter());
-            $delivery_option = $delivery_options_finder_core->getSelectedDeliveryOption();
-
-            $free_shipping = false;
-            foreach ($this->context->cart->getCartRules() as $rule) {
-                if ($rule['free_shipping']) {
-                    $free_shipping = true;
-                    break;
+                // Reset message
+                $errMess = '';
+                $this->context->smarty->assign('payson_errors', null);
+                // Check for validation/confirmation errors
+                if (isset($this->context->cookie->validation_error) && $this->context->cookie->validation_error != null) {
+                    $errMess = $this->context->cookie->validation_error;
+                    PaysonCheckout2::paysonAddLog('Validation or confirmation message: ' . $errMess);
+                    $this->context->smarty->assign('payson_errors', $errMess);
+                    // Delete old messages
+                    $this->context->cookie->__set('validation_error', null);
                 }
+                
+                // If AJAX return snippet and any message
+                if (Tools::getIsset('pco_update')) {
+                    if ($errMess != '') {
+                        $errMess = '<p><div class="alert">' . $errMess . '</div></p>';
+                    }
+                    die($errMess . $checkout->snippet);
+                }
+                
+                // Show checkout
+                $this->displayCheckout();
+            } else {
+                // No cart or empty cart
+                throw new Exception($this->module->l('Your cart is empty.', 'pconepage'));
             }
+        } catch (Exception $ex) {
+            // Log error message
+            PaysonCheckout2::paysonAddLog('Checkout error: ' . $ex->getMessage(), 2);
 
-            PaysonCheckout2::paysonAddLog('Delivery option: ' . print_r($delivery_options, true));
+            // Replace checkout snippet with error message
+            $this->context->smarty->assign('payson_checkout', $ex->getMessage());
 
-            $this->context->smarty->assign(array(
-                'payson_checkout' => $snippet,
-                'controllername' => 'pconepage',
-                'free_shipping' => $free_shipping,
-                'id_lang' => $this->context->language->id,
-                'token_cart' => $this->context->cart->secure_key,
-                'id_address' => $this->context->cart->id_address_delivery,
-                'delivery_options' => $delivery_options,
-                'delivery_option' => $delivery_option,
-                'pcoUrl' => $pcoUrl,
-                'validateUrl' => $validateUrl,
-                'PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS' => (int) Configuration::get('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS')
-            ));
-        } else {
-            $this->context->smarty->assign('payson_errors', 'Your cart is empty.');
+            // If AJAX return error message
+            if (Tools::getIsset('pco_update')) {
+                die($ex->getMessage());
+            }
+            
+            // Show checkout
+            $this->displayCheckout();
         }
-
-        // All done, lets checkout!
-        //$this->setTemplate('module:paysoncheckout2/views/templates/front/' . Configuration::get('PAYSONCHECKOUT2_TEMPLATE') . '.tpl');
     }
 
-    protected function getCheckoutSession()
+    protected function getCheckout($payson, $paysonApi, $customer, $cartCurrency, $address)
     {
-        $deliveryOptionsFinder = new DeliveryOptionsFinder($this->context, $this->getTranslator(), $this->objectPresenter, new PriceFormatter());
-
-        $session = new CheckoutSession($this->context, $deliveryOptionsFinder);
-
-        return $session;
+        // Get or create checkout
+        $newCheckout = false;
+        $checkoutId = $this->context->cookie->paysonCheckoutId;
+        if ($checkoutId && $checkoutId != null) {
+            // Get existing checkout
+            $checkout = $paysonApi->GetCheckout($checkoutId);
+            PaysonCheckout2::paysonAddLog('Got existing checkout with ID: ' . $checkout->id);
+        } else {
+            // Create a new checkout
+            $checkoutId = $paysonApi->CreateCheckout($payson->createPaysonCheckout($customer, $this->context->cart, $payson, $cartCurrency, $this->context->language->id, $address));
+            // Get checkout
+            $checkout = $paysonApi->GetCheckout($checkoutId);
+            // Save checkout ID in cookie
+            $this->context->cookie->__set('paysonCheckoutId', $checkout->id);
+            // Save data in Payson order table
+            $payson->createPaysonOrderEvent($checkout->id, $this->context->cart->id);
+            PaysonCheckout2::paysonAddLog('Created new checkout with ID: ' . $checkout->id);
+            $newCheckout = true;
+        }
+        
+        return array('checkout' => $checkout, 'newcheckout' => $newCheckout);
     }
+    
+    protected function displayCheckout()
+    {
+        $this->setTemplate('payment.tpl');
+    }
+    
+//    protected function getCheckoutSession()
+//    {
+//        $deliveryOptionsFinder = new DeliveryOptionsFinder($this->context, $this->getTranslator(), $this->objectPresenter, new PriceFormatter());
+//
+//        $session = new CheckoutSession($this->context, $deliveryOptionsFinder);
+//
+//        return $session;
+//    }
 
     protected function validateDeliveryOption($delivery_option)
     {
@@ -297,31 +279,31 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
         return true;
     }
 
-    protected function updateMessage($messageContent, $cart)
-    {
-        if ($messageContent) {
-            if (!Validate::isMessage($messageContent)) {
-                return false;
-            } elseif ($oldMessage = Message::getMessageByCartId((int) ($cart->id))) {
-                $message = new Message((int) ($oldMessage['id_message']));
-                $message->message = $messageContent;
-                $message->update();
-            } else {
-                $message = new Message();
-                $message->message = $messageContent;
-                $message->id_cart = (int) ($cart->id);
-                $message->id_customer = (int) ($cart->id_customer);
-                $message->add();
-            }
-        } else {
-            if ($oldMessage = Message::getMessageByCartId((int) ($cart->id))) {
-                $message = new Message((int) ($oldMessage['id_message']));
-                $message->delete();
-            }
-        }
-
-        return true;
-    }
+//    protected function updateMessage($messageContent, $cart)
+//    {
+//        if ($messageContent) {
+//            if (!Validate::isMessage($messageContent)) {
+//                return false;
+//            } elseif ($oldMessage = Message::getMessageByCartId((int) ($cart->id))) {
+//                $message = new Message((int) ($oldMessage['id_message']));
+//                $message->message = $messageContent;
+//                $message->update();
+//            } else {
+//                $message = new Message();
+//                $message->message = $messageContent;
+//                $message->id_cart = (int) ($cart->id);
+//                $message->id_customer = (int) ($cart->id_customer);
+//                $message->add();
+//            }
+//        } else {
+//            if ($oldMessage = Message::getMessageByCartId((int) ($cart->id))) {
+//                $message = new Message((int) ($oldMessage['id_message']));
+//                $message->delete();
+//            }
+//        }
+//
+//        return true;
+//    }
 
     protected function assignSummaryInformations()
     {

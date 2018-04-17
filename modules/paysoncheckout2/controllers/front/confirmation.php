@@ -25,103 +25,121 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
         parent::init();
 
         PaysonCheckout2::paysonAddLog('* ' . __FILE__ . ' -> ' . __METHOD__ . ' *');
-        PaysonCheckout2::paysonAddLog('Call Type: ' . Tools::getValue('call'));
+        PaysonCheckout2::paysonAddLog('Query: ' . print_r($_REQUEST, true));
         
-        $cartId = (int) Tools::getValue('id_cart');
-        if (!isset($cartId) || $cartId < 1 || $cartId == null) {
-            PaysonCheckout2::paysonAddLog('No cart ID.', 2);
-            Tools::redirect('index.php');
-        }
+        try {
+            require_once(_PS_MODULE_DIR_ . 'paysoncheckout2/paysoncheckout2.php');
+            $payson = new PaysonCheckout2();
+            
+            // Delete old messages
+            $this->context->cookie->__set('validation_error', null);
+            
+            $cartId = (int) Tools::getValue('id_cart');
+            if (!isset($cartId)) {
+                throw new Exception($this->module->l('Unable to show confirmation.', 'confirmation') . ' ' . $this->module->l('Missing cart ID.', 'confirmation'));
+            }
 
-        require_once(_PS_MODULE_DIR_ . 'paysoncheckout2/paysoncheckout2.php');
-        $payson = new PaysonCheckout2();
-        
-        if (isset($this->context->cookie->paysonCheckoutId) && $this->context->cookie->paysonCheckoutId != null) {
-            // Get checkout ID from cookie
-            $checkoutId = $this->context->cookie->paysonCheckoutId;
-            PaysonCheckout2::paysonAddLog('Got checkout ID: ' . $checkoutId . ' from cookie.');
-        } else {
-            // Get checkout ID from query
-            if (Tools::getIsset('checkout') && Tools::getValue('checkout') != null) {
-                $checkoutId = Tools::getValue('checkout');
-                PaysonCheckout2::paysonAddLog('Got checkout ID: ' . $checkoutId . ' from query.');
+            if (isset($this->context->cookie->paysonCheckoutId) && $this->context->cookie->paysonCheckoutId != null) {
+                // Get checkout ID from cookie
+                $checkoutId = $this->context->cookie->paysonCheckoutId;
+                PaysonCheckout2::paysonAddLog('Got checkout ID: ' . $checkoutId . ' from cookie.');
             } else {
-                // Get checkout ID from DB
-                $checkoutId = $payson->getPaysonOrderEventId($cartId);
-                if (isset($checkoutId) && $checkoutId != null) {
-                    PaysonCheckout2::paysonAddLog('Got checkout ID: ' . $checkoutId . ' from DB.');
+                // Get checkout ID from query
+                if (Tools::getIsset('checkout') && Tools::getValue('checkout') != null) {
+                    $checkoutId = Tools::getValue('checkout');
+                    PaysonCheckout2::paysonAddLog('Got checkout ID: ' . $checkoutId . ' from query.');
                 } else {
-                    // Unable to get checkout ID
-                    PaysonCheckout2::paysonAddLog('No checkout ID, redirect.', 2);
-                    Tools::redirect('index.php');
+                    // Get checkout ID from DB
+                    $checkoutId = $payson->getPaysonOrderEventId($cartId);
+                    if (isset($checkoutId) && $checkoutId != null) {
+                        PaysonCheckout2::paysonAddLog('Got checkout ID: ' . $checkoutId . ' from DB.');
+                    } else {
+                        // Unable to get checkout ID
+                        throw new Exception($this->module->l('Unable to show confirmation.', 'confirmation') . ' ' . $this->module->l('Missing checkout ID.', 'confirmation'));
+                    }
                 }
             }
-        }
 
-        $cart = new Cart($cartId);
+            $paysonApi = $payson->getPaysonApiInstance();
+            $checkout = $paysonApi->GetCheckout($checkoutId);
+            
+            $cart = new Cart($cartId);
 
-        if (!$cart->checkQuantities()) {
-            Tools::redirect('order.php?step=3');
-        }
+            if (!$cart->checkQuantities()) {
+                Tools::redirect('order.php?step=3');
+            }
 
-        $paysonApi = $payson->getPaysonApiInstance();
-        
-        $checkout = $paysonApi->GetCheckout($checkoutId);
-
-        PaysonCheckout2::paysonAddLog('Cart ID: ' . $cart->id);
-        PaysonCheckout2::paysonAddLog('Cart delivery cost: ' . $cart->getOrderTotal(true, Cart::ONLY_SHIPPING));
-        PaysonCheckout2::paysonAddLog('Cart total: ' . $cart->getOrderTotal(true, Cart::BOTH));
-        PaysonCheckout2::paysonAddLog('Checkout ID: ' . $checkout->id);
-        PaysonCheckout2::paysonAddLog('Checkout total: ' . $checkout->payData->totalPriceIncludingTax);
-        PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout->status);
-
-        $orderCreated = false;
-        
-        $redirect = false;
-
-        // For testing
-        //$checkout->status = 'denied';
-        
-        switch ($checkout->status) {
-            case 'readyToShip':
-                if ($cart->OrderExists() == false) {
-                    // Create PS order
-                    $orderCreated = $payson->createOrderPS($cart->id, $checkout);
-                    PaysonCheckout2::paysonAddLog('New order ID: ' . $orderCreated);
-                } else {
-                    PaysonCheckout2::paysonAddLog('Order already created.');
-                    $redirect = 'index.php';
-                }
-                break;
-            case 'readyToPay':
-            case 'denied':
-            case 'created':
-            case 'canceled':
-            case 'expired':
-            case 'shipped':
-                $redirect = 'order.php?step=3';
-                break;
-            default:
-                $redirect = 'order.php?step=3';
-        }
-
-        // Delete checkout id cookie
-        $this->context->cookie->__set('paysonCheckoutId', null);
-        
-        if ($redirect !== false) {
-            $this->context->cookie->__set('validation_error', $this->module->l('Payment status was',  'confirmation') . ' "' . $checkout->status . '". ' . $this->module->l('Please try again.', 'confirmation'));
-            $payson->updatePaysonOrderEvent($checkout, $cartId);
-            PaysonCheckout2::paysonAddLog('Unable to display confirmation, redirecting to: ' . $redirect);
+            PaysonCheckout2::paysonAddLog('Cart ID: ' . $cart->id);
+            PaysonCheckout2::paysonAddLog('Checkout ID: ' . $checkout->id);
             PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout->status);
-            Tools::redirect($redirect);
+
+            $newOrderId = false;
+            $redirect = false;
+
+            // For testing
+            //$checkout->status = 'canceled';
+
+            switch ($checkout->status) {
+                case 'readyToShip':
+                    if ($cart->OrderExists() == false) {
+                        // Create PS order
+                        $newOrderId = $payson->createOrderPS($cart->id, $checkout);
+                        PaysonCheckout2::paysonAddLog('New order ID: ' . $newOrderId);
+                    } else {
+                        PaysonCheckout2::paysonAddLog('Order already created.');
+                        $redirect = 'index.php';
+                    }
+                    break;
+                case 'created':
+                case 'readyToPay':
+                case 'denied':
+                    //$redirect = 'order.php?step=3';
+                    $redirect = 'index.php?fc=module&module=paysoncheckout2&controller=pconepage';
+                    break;
+                case 'canceled':
+                case 'expired':
+                case 'shipped':
+                    throw new Exception($this->module->l('Unable to show confirmation.', 'confirmation') . ' ' . $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout->status . '".');
+                default:
+                    $redirect = 'order.php?step=3';
+            }
+
+            // Delete checkout id cookie
+            $this->context->cookie->__set('paysonCheckoutId', null);
+
+            if ($redirect !== false) {
+                $this->context->cookie->__set('validation_error', $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout->status . '".');
+                $payson->updatePaysonOrderEvent($checkout, $cartId);
+                PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout->status);
+                PaysonCheckout2::paysonAddLog('Unable to display confirmation, redirecting to: ' . $redirect);
+                Tools::redirect($redirect);
+            }
+
+            $order = new Order((int) $newOrderId);
+            $this->context->cookie->__set('id_customer', $order->id_customer);
+
+            $this->context->smarty->assign('payson_checkout', $checkout->snippet);
+            $this->context->smarty->assign('HOOK_ORDER_CONFIRMATION', Hook::exec('OrderConfirmation', array('objOrder' => $order)));
+
+            // Show confirmation
+            $this->displayConfirmation();
+        } catch (Exception $ex) {
+            // Log error message
+            PaysonCheckout2::paysonAddLog('Checkout error: ' . $ex->getMessage(), 2);
+
+            // Delete checkout id cookie
+            $this->context->cookie->__set('paysonCheckoutId', null);
+            
+            // Replace checkout snippet with error message
+            $this->context->smarty->assign('payson_checkout', $ex->getMessage());
+
+            // Show confirmation
+            $this->displayConfirmation();
         }
-
-        $order = new Order((int) $orderCreated);
-        $this->context->cookie->__set('id_customer', $order->id_customer);
-        
-        $this->context->smarty->assign('snippet', $checkout->snippet);
-        $this->context->smarty->assign('HOOK_ORDER_CONFIRMATION', Hook::exec('OrderConfirmation', array('objOrder' => $order)));
-
+    }
+    
+    protected function displayConfirmation()
+    {
         $this->setTemplate('payment.tpl');
     }
 }

@@ -20,12 +20,14 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
     public function init()
     {
         parent::init();
-
         PaysonCheckout2::paysonAddLog('* ' . __FILE__ . ' -> ' . __METHOD__ . ' *');
 
+        $this->context->cookie->__set('validation_error', null);
+        
         $cartId = (int) Tools::getValue('id_cart');
         if (!isset($cartId) || $cartId < 1 || $cartId == null) {
-            Logger::addLog('No cart ID in query.', 3, null, null, null, true);
+            Logger::addLog('No cart ID in query.', 3);
+            $this->context->cookie->__set('validation_error', $this->module->l('Validation message', 'validation') . ': ' . $this->module->l('Missing cart ID.', 'validation'));
             die('reload');
         }
 
@@ -36,7 +38,8 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
                 $checkoutId = $this->context->cookie->paysonCheckoutId;
                 PaysonCheckout2::paysonAddLog('No checkout ID in query, loaded: ' . $checkoutId . ' from cookie.');
             } else {
-                PaysonCheckout2::paysonAddLog('No checkout ID in cookie, redirect.');
+                Logger::addLog('No checkout ID in cookie, redirect.', 3);
+                $this->context->cookie->__set('validation_error', $this->module->l('Validation message', 'validation') . ': ' . $this->module->l('Missing checkout ID.', 'validation'));
                 die('reload');
             }
         }
@@ -49,7 +52,6 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
 
         PaysonCheckout2::paysonAddLog('Checkout ID: ' . $checkout->id);
         PaysonCheckout2::paysonAddLog('Cart ID: ' . $cartId);
-        PaysonCheckout2::paysonAddLog('Query: ' . print_r($_REQUEST, true));
         PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout->status);
 
         $cart = new Cart($cartId);
@@ -141,16 +143,13 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
 
             PaysonCheckout2::paysonAddLog('Updated checkout to match cart.');
             PaysonCheckout2::paysonAddLog('Failed validation, reload.');
-
             if (Tools::getIsset('validate_order')) {
                 // Validation from JS PaysonEmbeddedAddressChanged event
-                $this->context->cookie->__set('validation_error', $this->module->l('Your order has been updated. Please review the order before proceeding.'));
+                $this->context->cookie->__set('validation_error', $this->module->l('Your order has been updated. Please review the order before proceeding.', 'validation'));
                 die('reload');
             }
         }
-        
         PaysonCheckout2::paysonAddLog('Passed validation.');
-        
         if (Tools::getIsset('validate_order')) {
             // Validation from JS PaysonEmbeddedAddressChanged event
             die('passed_validation');

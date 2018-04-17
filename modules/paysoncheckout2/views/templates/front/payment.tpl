@@ -35,8 +35,15 @@
 
 {block name="content"}
     <section>
+        {if isset($payson_errors)}
+            <p>
+                <div class="alert">
+                    {$payson_errors|escape:'html':'UTF-8'}
+                </div>
+            </p>
+        {/if}
         <div id="paysonpaymentwindow">
-            {$snippet nofilter}{* IFRAME, no escaping possible *}
+            {$payson_checkout nofilter}{* IFRAME, no escaping possible *}
         </div>
     </section>
 {/block}

@@ -27,7 +27,7 @@ class PaysonCheckout2 extends PaymentModule
     {
         $this->name = 'paysoncheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '2.0.9';
+        $this->version = '2.0.10';
         $this->ps_versions_compliancy = array('min' => '1.6.0.14', 'max' => _PS_VERSION_);
         $this->author = 'Payson AB';
         $this->module_key = '4015ee54469de01eaa9150b76054547e';
@@ -141,7 +141,7 @@ class PaysonCheckout2 extends PaymentModule
         // Data for AJAX calls
         Media::addJsDef(array('pcourl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true)));
         Media::addJsDef(array('validateurl' => $this->context->link->getModuleLink('paysoncheckout2', 'validation', array(), true)));
-        Media::addJsDef(array('paymenturl' => $this->context->link->getModuleLink('paysoncheckout2', 'payment', array(), true)));
+        Media::addJsDef(array('paymenturl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true)));
         Media::addJsDef(array('id_cart' => $this->context->cart->id));
     }
     
@@ -650,7 +650,7 @@ class PaysonCheckout2 extends PaymentModule
         if ((int) Configuration::get('PAYSONCHECKOUT2_ONE_PAGE') == 1 && (int) Configuration::get('PS_ORDER_PROCESS_TYPE') == 1) {
             $checkoutUri = $this->context->link->getPageLink('order', array('step' => '3'));
         } else {
-            $checkoutUri = $this->context->link->getModuleLink('paysoncheckout2', 'payment', array('trackingId' => $trackingId, 'id_cart' => $cart->id));
+            $checkoutUri = $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array('trackingId' => $trackingId, 'id_cart' => $cart->id));
         }
         
         $confirmationUri = $this->context->link->getModuleLink('paysoncheckout2', 'confirmation', array('trackingId' => $trackingId, 'id_cart' => $cart->id, 'call' => 'confirmation'));
