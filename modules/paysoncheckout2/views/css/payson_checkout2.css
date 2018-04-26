@@ -27,5 +27,6 @@ p.payment_module a.payment-payson-checkout2:hover {
 }
 
 #paysonpaymentwindow {
-    height: 536px;
+    /*height: 536px;*/
+    overflow:hidden;
 }

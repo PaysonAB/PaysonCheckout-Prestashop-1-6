@@ -24,7 +24,10 @@ $(document).ready(function() {
         $('.page-heading.step-num:first, #opc_account, #opc_new_account').hide();
         
         // Add container for iframe
-        $('#opc_payment_methods').append('<div id="paysonpaymentwindow"></div>');
+        $('#opc_payment_methods').append('<div style="height:536px;" id="paysonpaymentwindow"></div>');
+        
+        // Init checkout
+        updateCheckout();
         
         // Watch for change in cart total and update checkout
         amount = $("#total_price").text();
@@ -34,13 +37,9 @@ $(document).ready(function() {
                updateCheckout();
             } 
             amount = $("#total_price").text();
-        }, 500);
-        
-        // Init checkout
-        updateCheckout();
+        }, 300);
     }
 
-    
     function updateCheckout() {
         upReq = null;
         upReq = $.ajax({
@@ -61,11 +60,6 @@ $(document).ready(function() {
                     location.href = orderOpcUrl;
                 } else {
                     $("#paysonpaymentwindow").html(returnData);
-                    setTimeout(function() {
-                        if ($('#paysonpaymentwindow').length) {
-                            $('#paysonpaymentwindow').height('auto');
-                        }
-                    }, 600);
                     sendRelease();
                 }
             },
@@ -79,10 +73,10 @@ $(document).ready(function() {
     function sendLockDown() {
         if ($('#paysonIframe').length) {
             document.getElementById('paysonIframe').contentWindow.postMessage('lock', '*');
-            //if ($('#paysonpaymentwindow').length) {
+            if ($('#paysonpaymentwindow').length) {
                 // To prevent height flash when iframe reload
-                //$('#paysonpaymentwindow').height($('#paysonIframe').height());
-            //}
+                $('#paysonpaymentwindow').height($('#paysonIframe').height());
+            }
         }
     }
 
@@ -90,14 +84,12 @@ $(document).ready(function() {
         if ($('#paysonIframe').length) {
             document.getElementById('paysonIframe').contentWindow.postMessage('release', '*');
         }
+        setTimeout(function() {
+            if ($('#paysonpaymentwindow').length) {
+                $('#paysonpaymentwindow').height('auto');
+            }
+        }, 500);
     }
-
-    // Reset container height to auto for responsive
-    setTimeout(function() {
-        if ($('#paysonpaymentwindow').length) {
-            $('#paysonpaymentwindow').height('auto');
-        }
-    }, 600);
     
     // Validate order on PaysonEmbeddedAddressChanged event
     function validateOrder(callData) {
@@ -108,7 +100,7 @@ $(document).ready(function() {
             async: true,
             cache: false,
             data: callData,
-			beforeSend: function()
+            beforeSend: function()
             { 
                 if (valReq !== null) {
                     valReq.abort();
@@ -133,18 +125,4 @@ $(document).ready(function() {
         var callData = {validate_order: '1', id_cart: id_cart};
         validateOrder(callData);
     }, true);
-    
-    // IE11 poly for custom event, no need for this anymore
-//    (function () {
-//        if ( typeof window.CustomEvent === "function" ) return false; //If not IE
-//
-//        function CustomEvent ( event, params ) {
-//                params = params || { bubbles: false, cancelable: false, detail: undefined };
-//                var evt = document.createEvent( 'CustomEvent' );
-//                evt.initCustomEvent( event, params.bubbles, params.cancelable, params.detail );
-//                return evt;
-//        }
-//        CustomEvent.prototype = window.Event.prototype;
-//        window.CustomEvent = CustomEvent;
-//    })();
 });
