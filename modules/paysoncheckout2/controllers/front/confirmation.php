@@ -95,6 +95,7 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                 case 'denied':
                     //$redirect = 'order.php?step=3';
                     $redirect = 'index.php?fc=module&module=paysoncheckout2&controller=pconepage';
+                    $this->context->cookie->__set('validation_error', $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout->status . '".');
                     break;
                 case 'canceled':
                 case 'expired':
@@ -102,13 +103,13 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                     throw new Exception($this->module->l('Unable to show confirmation.', 'confirmation') . ' ' . $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout->status . '".');
                 default:
                     $redirect = 'order.php?step=3';
+                    $this->context->cookie->__set('validation_error', $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout->status . '".');
             }
 
             // Delete checkout id cookie
             $this->context->cookie->__set('paysonCheckoutId', null);
 
             if ($redirect !== false) {
-                $this->context->cookie->__set('validation_error', $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout->status . '".');
                 $payson->updatePaysonOrderEvent($checkout, $cartId);
                 PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout->status);
                 PaysonCheckout2::paysonAddLog('Unable to display confirmation, redirecting to: ' . $redirect);

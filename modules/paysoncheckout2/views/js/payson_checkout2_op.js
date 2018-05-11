@@ -41,33 +41,37 @@ $(document).ready(function() {
     }
 
     function updateCheckout() {
-        upReq = null;
-        upReq = $.ajax({
-            type: 'GET',
-            url: pcourl,
-            async: true,
-            cache: false,
-            data: {pco_update: '1'},
-            beforeSend: function()
-            { 
-                if (upReq !== null) {
-                    upReq.abort();
-                }
-            },
-            success: function(returnData)
-            {
-                if (returnData == 'reload') {
-                    location.href = orderOpcUrl;
-                } else {
-                    $("#paysonpaymentwindow").html(returnData);
+        if ((termsRequired() && termsChecked()) || termsRequired() === false) {
+            upReq = null;
+            upReq = $.ajax({
+                type: 'GET',
+                url: pcourl,
+                async: true,
+                cache: false,
+                data: {pco_update: '1'},
+                beforeSend: function()
+                { 
+                    if (upReq !== null) {
+                        upReq.abort();
+                    }
+                },
+                success: function(returnData)
+                {
+                    if (returnData == 'reload') {
+                        location.href = orderOpcUrl;
+                    } else {
+                        $("#paysonpaymentwindow").html(returnData);
+                        sendRelease();
+                    }
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    //console.log(returnData);
                     sendRelease();
                 }
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown) {
-                //console.log(returnData);
-                sendRelease();
-            }
-        });
+            });
+        } else {
+            $("#paysonpaymentwindow").html('<p class="warning">' + acceptTermsMessage + '</p>');
+        }    
     }
 
     function sendLockDown() {
@@ -90,6 +94,26 @@ $(document).ready(function() {
             }
         }, 500);
     }
+    
+    function termsChecked() {
+        if ($('#cgv').prop('checked')) {
+            return true;
+        }
+
+        return false;
+    }
+    
+    function termsRequired() {
+        if ($('#cgv').length) {
+            return true;
+        }
+
+        return false;
+    }
+    
+    $('body').on('click', '#cgv', function () {
+        updateCheckout();
+    });
     
     // Validate order on PaysonEmbeddedAddressChanged event
     function validateOrder(callData) {

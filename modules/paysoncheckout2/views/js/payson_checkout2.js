@@ -17,10 +17,10 @@ $(document).ready(function() {
     function sendLockDown() {
         if ($('#paysonIframe').length) {
             document.getElementById('paysonIframe').contentWindow.postMessage('lock', '*');
-            //if ($('#paysonpaymentwindow').length) {
+            if ($('#paysonpaymentwindow').length) {
                 // To prevent height flash when iframe reload
-                //$('#paysonpaymentwindow').height($('#paysonIframe').height());
-            //}
+                $('#paysonpaymentwindow').height($('#paysonIframe').height());
+            }
         }
     }
 
@@ -28,6 +28,11 @@ $(document).ready(function() {
         if ($('#paysonIframe').length) {
             document.getElementById('paysonIframe').contentWindow.postMessage('release', '*');
         }
+        setTimeout(function() {
+            if ($('#paysonpaymentwindow').length) {
+                $('#paysonpaymentwindow').height('auto');
+            }
+        }, 500);
     }
 
     setTimeout(function() {
@@ -56,11 +61,6 @@ $(document).ready(function() {
                 if (returnData == 'reload') {
                     location.href = paymenturl;
                 } else {
-                    setTimeout(function() {
-                        if ($('#paysonpaymentwindow').length) {
-                            $('#paysonpaymentwindow').height('auto');
-                        }
-                    }, 600);
                     sendRelease();
                 }
             },
@@ -75,18 +75,4 @@ $(document).ready(function() {
         var callData = {validate_order: '1', id_cart: id_cart};
         validateOrder(callData);
     }, true);
-    
-    // IE11 poly for custom event, no need for this anymore
-//    (function () {
-//        if ( typeof window.CustomEvent === "function" ) return false; //If not IE
-//
-//        function CustomEvent ( event, params ) {
-//                params = params || { bubbles: false, cancelable: false, detail: undefined };
-//                var evt = document.createEvent( 'CustomEvent' );
-//                evt.initCustomEvent( event, params.bubbles, params.cancelable, params.detail );
-//                return evt;
-//        }
-//        CustomEvent.prototype = window.Event.prototype;
-//        window.CustomEvent = CustomEvent;
-//    })();
 });

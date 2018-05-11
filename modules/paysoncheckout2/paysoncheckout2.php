@@ -143,6 +143,7 @@ class PaysonCheckout2 extends PaymentModule
         Media::addJsDef(array('validateurl' => $this->context->link->getModuleLink('paysoncheckout2', 'validation', array(), true)));
         Media::addJsDef(array('paymenturl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true)));
         Media::addJsDef(array('id_cart' => $this->context->cart->id));
+        Media::addJsDef(array('acceptTermsMessage' => $this->l('You must agree to the terms of service before continuing.')));
     }
     
     public function checkCurrency($cart)

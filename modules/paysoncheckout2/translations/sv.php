@@ -6,6 +6,7 @@ $_MODULE['<{paysoncheckout2}default-bootstrap>paysoncheckout2_d9ced9ff2c00b058eb
 $_MODULE['<{paysoncheckout2}default-bootstrap>paysoncheckout2_b09e4836ad3384c8e31d902583b64aab'] = 'Betala med faktura, kort, internetbank eller delbetalning';
 $_MODULE['<{paysoncheckout2}default-bootstrap>paysoncheckout2_a02758d758e8bec77a33d7f392eb3f8a'] = 'Ingen valuta inställd för modul.';
 $_MODULE['<{paysoncheckout2}default-bootstrap>paysoncheckout2_c98133549a6943937cd3d4c70887e451'] = 'Betald med Payson Checkout 2.0';
+$_MODULE['<{paysoncheckout2}default-bootstrap>paysoncheckout2_5508a53851720a210e50f7b8a6f66f46'] = 'Du måste godkänna våra köpvillkor innan du fortsätter.';
 $_MODULE['<{paysoncheckout2}default-bootstrap>paysoncheckout2_43c7582c40594c3fe32a6634ef9dcb07'] = 'Skicka inte uppdaterad orderstatus';
 $_MODULE['<{paysoncheckout2}default-bootstrap>paysoncheckout2_00d23a76e43b46dae9ec7aa9dcbebb32'] = 'Aktiverad';
 $_MODULE['<{paysoncheckout2}default-bootstrap>paysoncheckout2_93cba07454f06a4a960172bbd6e2a435'] = 'Ja';

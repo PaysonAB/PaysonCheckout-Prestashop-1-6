@@ -187,9 +187,9 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                 $this->context->smarty->assign('payson_errors', null);
                 // Check for validation/confirmation errors
                 if (isset($this->context->cookie->validation_error) && $this->context->cookie->validation_error != null) {
-                    $errMess = $this->context->cookie->validation_error;
+                    //$errMess = $this->context->cookie->validation_error;
                     PaysonCheckout2::paysonAddLog('Validation or confirmation message: ' . $errMess);
-                    $this->context->smarty->assign('payson_errors', $errMess);
+                    //$this->context->smarty->assign('payson_errors', $errMess);
                     // Delete old messages
                     $this->context->cookie->__set('validation_error', null);
                 }
