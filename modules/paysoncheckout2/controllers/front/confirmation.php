@@ -19,6 +19,16 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
     
     public $display_column_left = false;
     public $display_column_right = false;
+    public $ssl = false;
+    
+    public function __construct()
+    {
+        parent::__construct();
+
+        if (Configuration::get('PS_SSL_ENABLED')) {
+            $this->ssl = true;
+        }
+    }
     
     public function init()
     {

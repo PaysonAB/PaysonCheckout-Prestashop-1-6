@@ -21,7 +21,17 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
 
     public $display_column_left = false;
     public $display_column_right = false;
+    public $ssl = false;
+    
+    public function __construct()
+    {
+        parent::__construct();
 
+        if (Configuration::get('PS_SSL_ENABLED')) {
+            $this->ssl = true;
+        }
+    }
+    
     public function initContent()
     {
         parent::initContent();
@@ -197,7 +207,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                 // If AJAX return snippet and any message
                 if (Tools::getIsset('pco_update')) {
                     if ($errMess != '') {
-                        $errMess = '<p><div class="alert">' . $errMess . '</div></p>';
+                        $errMess = '<p class="warning">' . $errMess . '</p>';
                     }
                     die($errMess . $checkout->snippet);
                 }
@@ -217,7 +227,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
 
             // If AJAX return error message
             if (Tools::getIsset('pco_update')) {
-                die($ex->getMessage());
+                die('<p class="warning">' . $ex->getMessage() . '</p>');
             }
             
             // Show checkout
