@@ -32,6 +32,27 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
         }
     }
     
+    public function postProcess()
+    {
+        // Newsletter subscription
+        if (Tools::getIsset('newsletter_sub')) {
+            $val = Tools::getValue('newsletter_sub');
+            $this->context->cookie->__set('newsletter_sub', $val);
+            die('success');
+        }
+        
+        // Newsletter markup
+        if (Tools::getIsset('newsletter_markup')) {
+            $markup = '
+                    <div class="box newsletter-checkbox"><div class="checkbox"><div class="checker" id="uniform-newsletter">'
+                    . '<span><input type="checkbox" name="newsletter_checkbox" id="newsletter_checkbox" value="1"></span>'
+                    . '</div>'
+                    . '<label for="newsletter_checkbox">' . $this->module->l('Subscribe to our newsletter.', 'pconepage') . '</label></div></div>';
+            
+            die($markup);
+        }
+    }
+    
     public function initContent()
     {
         parent::initContent();
@@ -150,9 +171,12 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     'id_address' => $this->context->cart->id_address_delivery,
                     //'delivery_options' => $delivery_options,
                     //'delivery_option' => $delivery_option,
+                    'PAYSONCHECKOUT2_SHOW_TERMS' => (int) Configuration::get('PAYSONCHECKOUT2_SHOW_TERMS'),
+                    'PAYSONCHECKOUT2_NEWSLETTER' => (int) Configuration::get('PAYSONCHECKOUT2_NEWSLETTER'),
                     'pcoUrl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true),
                     'validateUrl' => $this->context->link->getModuleLink('paysoncheckout2', 'validation', array(), true),
                     'paymentUrl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true),
+                    'newsletter_optin_text' => $this->module->l('Sign up for our newsletter', 'pconepage'),
                 ));
 
                 // Check for error and exit if any

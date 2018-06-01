@@ -14,65 +14,67 @@
 */
 
 $(document).ready(function() {
-    function sendLockDown() {
-        if ($('#paysonIframe').length) {
-            document.getElementById('paysonIframe').contentWindow.postMessage('lock', '*');
-            if ($('#paysonpaymentwindow').length) {
-                // To prevent height flash when iframe reload
-                $('#paysonpaymentwindow').height($('#paysonIframe').height());
+    if (page_name === 'module-paysoncheckout2-pconepage') {
+        function sendLockDown() {
+            if ($('#paysonIframe').length) {
+                document.getElementById('paysonIframe').contentWindow.postMessage('lock', '*');
+                if ($('#paysonpaymentwindow').length) {
+                    // To prevent height flash when iframe reload
+                    $('#paysonpaymentwindow').height($('#paysonIframe').height());
+                }
             }
         }
-    }
 
-    function sendRelease() {
-        if ($('#paysonIframe').length) {
-            document.getElementById('paysonIframe').contentWindow.postMessage('release', '*');
+        function sendRelease() {
+            if ($('#paysonIframe').length) {
+                document.getElementById('paysonIframe').contentWindow.postMessage('release', '*');
+            }
+            setTimeout(function() {
+                if ($('#paysonpaymentwindow').length) {
+                    $('#paysonpaymentwindow').height('auto');
+                }
+            }, 500);
         }
+
         setTimeout(function() {
             if ($('#paysonpaymentwindow').length) {
                 $('#paysonpaymentwindow').height('auto');
             }
         }, 500);
-    }
 
-    setTimeout(function() {
-        if ($('#paysonpaymentwindow').length) {
-            $('#paysonpaymentwindow').height('auto');
-        }
-    }, 600);
-    
-    // Validate order on PaysonEmbeddedAddressChanged event
-    function validateOrder(callData) {
-        valReq = null;
-        valReq = $.ajax({
-            type: 'GET',
-            url: validateurl,
-            async: true,
-            cache: false,
-            data: callData,
-            beforeSend: function()
-            { 
-                if (valReq !== null) {
-                    valReq.abort();
-                }
-            },
-            success: function(returnData)
-            {
-                if (returnData == 'reload') {
-                    location.href = paymenturl;
-                } else {
+        // Validate order on PaysonEmbeddedAddressChanged event
+        function validateOrder(callData) {
+            valReq = null;
+            valReq = $.ajax({
+                type: 'GET',
+                url: validateurl,
+                async: true,
+                cache: false,
+                data: callData,
+                beforeSend: function()
+                { 
+                    if (valReq !== null) {
+                        valReq.abort();
+                    }
+                },
+                success: function(returnData)
+                {
+                    if (returnData == 'reload') {
+                        location.href = paymenturl;
+                    } else {
+                        sendRelease();
+                    }
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
                     sendRelease();
                 }
-            },
-            error: function(XMLHttpRequest, textStatus, errorThrown) {
-                sendRelease();
-            }
-        });
+            });
+        }
+
+        document.addEventListener('PaysonEmbeddedAddressChanged', function() {
+            sendLockDown();
+            var callData = {validate_order: '1', id_cart: id_cart};
+            validateOrder(callData);
+        }, true);
     }
-    
-    document.addEventListener('PaysonEmbeddedAddressChanged', function() {
-        sendLockDown();
-        var callData = {validate_order: '1', id_cart: id_cart};
-        validateOrder(callData);
-    }, true);
 });

@@ -30,3 +30,16 @@ p.payment_module a.payment-payson-checkout2:hover {
     /*height: 536px;*/
     overflow:hidden;
 }
+
+.newsletter-checkbox {
+    margin-bottom: 0px;
+}
+
+.newsletter-checkbox .checkbox {
+    margin-bottom: 0;
+}
+
+.terms-box-hidden {
+    position: absolute;
+    left: -999em;
+}
