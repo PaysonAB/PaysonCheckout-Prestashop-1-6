@@ -20,7 +20,7 @@ $(document).ready(function() {
         cartAmount = $("#total_price").text();
         // Detect completed  AJAX
         $(document).ajaxComplete(function(event, xhr, settings) {
-             if ((settings.url.toLowerCase().indexOf('quick-order') >= 0) || (cartAmount !== $("#total_price").text())) {
+             if ((settings.url.toLowerCase().indexOf('quick-order') >= 0) || (settings.url.toLowerCase().indexOf('order-opc') >= 0) || (cartAmount !== $("#total_price").text())) {
                 hideTerms();
                 addNewsletter();
                 sendLockDown();
