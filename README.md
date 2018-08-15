@@ -22,4 +22,3 @@ Once the module is uploaded, it will appear in the list.
 * Click on ”Install”.
 * If a note appears, click on ”Continue with the installation”.
 
-When the upload has completed the module is installed and ready to use in test mode.

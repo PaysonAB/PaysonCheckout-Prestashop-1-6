@@ -29,7 +29,7 @@ class PaysonCheckout2 extends PaymentModule
     {
         $this->name = 'paysoncheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '2.0.12';
+        $this->version = '2.0.13';
         $this->ps_versions_compliancy = array('min' => '1.6.0.14', 'max' => _PS_VERSION_);
         $this->author = 'Payson AB';
         $this->module_key = '4015ee54469de01eaa9150b76054547e';
@@ -123,6 +123,10 @@ class PaysonCheckout2 extends PaymentModule
             return;
         }
         
+        if (!$this->checkMinAmount($params['cart'])) {
+            return;
+        }
+        
         return $this->display(__FILE__, '/views/templates/front/payment_infos.tpl');
     }
 
@@ -137,12 +141,13 @@ class PaysonCheckout2 extends PaymentModule
     
     public function hookHeader()
     {
-        if (Configuration::get('PAYSONCHECKOUT2_ONE_PAGE') == 1 && (int) Configuration::get('PS_ORDER_PROCESS_TYPE') == 1) {
-            $this->context->controller->addJS(_MODULE_DIR_ . 'paysoncheckout2/views/js/payson_checkout2_op.js');
-        } else {
-            $this->context->controller->addJS(_MODULE_DIR_ . 'paysoncheckout2/views/js/payson_checkout2.js');
+        $js_file = 'payson_checkout2_op.js';
+        $disable_opc = (int) Tools::getValue('disopc');
+        if (((int) Configuration::get('PAYSONCHECKOUT2_ONE_PAGE') !== 1 || (int) Configuration::get('PS_ORDER_PROCESS_TYPE') !== 1 || $disable_opc) || ((int) Configuration::get('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS') == 1 && !$this->checkMinAmount($this->context->cart))) {
+            $js_file = 'payson_checkout2.js';
         }
-
+        $this->context->controller->addJS(_MODULE_DIR_ . 'paysoncheckout2/views/js/' . $js_file);
+        
         Media::addJsDef(array('pcourl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true)));
         Media::addJsDef(array('validateurl' => $this->context->link->getModuleLink('paysoncheckout2', 'validation', array(), true)));
         Media::addJsDef(array('paymenturl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true)));
@@ -166,6 +171,20 @@ class PaysonCheckout2 extends PaymentModule
                 }
             }
         }
+        return false;
+    }
+    
+    public function checkMinAmount($cart)
+    {
+        $cartTotal = $cart->getOrderTotal(true, Cart::BOTH);
+        $currency = new Currency($cart->id_currency);
+        
+        if (($currency->iso_code == 'SEK' && $cartTotal >= 4) || ($currency->iso_code == 'EUR' && $cartTotal >= 0.4)) {
+            return true;
+        }
+        $this::paysonAddLog('Cart currency is: ' . print_r($currency->iso_code, true));
+        $this::paysonAddLog('Cart total is: ' . $cartTotal);
+        $this::paysonAddLog('Minimum order amount of 4 SEK/0.4 EUR not met.');
         return false;
     }
 
@@ -266,78 +285,6 @@ class PaysonCheckout2 extends PaymentModule
                     'required' => false,
                     'desc' => $this->l('Enter your API Key for Payson Checkout 2.0'),
                 ),
-                array(
-                    'type' => 'select',
-                    'label' => $this->l('Shipped order status'),
-                    'name' => 'PAYSON_ORDER_SHIPPED_STATE',
-                    'desc' => $this->l('Order status Shipped will be sent to Payson when this order status is set.'),
-                    'options' => array(
-                        'query' => $orderStates,
-                        'id' => 'id_order_state',
-                        'name' => 'name',
-                    ),
-                ),
-                array(
-                    'type' => 'select',
-                    'label' => $this->l('Canceled order status'),
-                    'name' => 'PAYSON_ORDER_CANCEL_STATE',
-                    'desc' => $this->l('Order status Canceled will be sent to Payson when this order status is set.'),
-                    'options' => array(
-                        'query' => $orderStates,
-                        'id' => 'id_order_state',
-                        'name' => 'name',
-                    ),
-                ),
-                array(
-                    'type' => 'select',
-                    'label' => $this->l('Refunded order status'),
-                    'name' => 'PAYSON_ORDER_CREDITED_STATE',
-                    'desc' => $this->l('Payson order will be refunded when this order status is set.'),
-                    'options' => array(
-                        'query' => $orderStates,
-                        'id' => 'id_order_state',
-                        'name' => 'name',
-                    ),
-                ),
-                array(
-                    'type' => 'select',
-                    'label' => $this->l('Color scheme'),
-                    'name' => 'PAYSONCHECKOUT2_COLOR_SCHEME',
-                    'desc' => $this->l('Payment window color scheme'),
-                    'options' => array(
-                        'query' => array(
-                            array(
-                                'value' => 'gray',
-                                'label' => $this->l('White form on gray background (default)'),),
-                            array(
-                                'value' => 'blue',
-                                'label' => $this->l('Blue form on white background'),),
-                            array(
-                                'value' => 'white',
-                                'label' => $this->l('White form on white background'),),
-                            array(
-                                'value' => 'GrayTextLogos',
-                                'label' => $this->l('White form on gray background with text bank logotypes'),),
-                            array(
-                                'value' => 'BlueTextLogos',
-                                'label' => $this->l('Blue form on white background with text bank logotypes'),),
-                            array(
-                                'value' => 'WhiteTextLogos',
-                                'label' => $this->l('White form on white background with text bank logotypes'),),
-                            array(
-                                'value' => 'GrayNoFooter',
-                                'label' => $this->l('Gray form on white background with no bank logotypes and no footer'),),
-                            array(
-                                'value' => 'BlueNoFooter',
-                                'label' => $this->l('Blue form on white background with no bank logotypes and no footer'),),
-                            array(
-                                'value' => 'WhiteNoFooter',
-                                'label' => $this->l('White form on white background with no bank logotypes and no footer'),),
-                        ),
-                        'id' => 'value',
-                        'name' => 'label',
-                    ),
-                ),
 //                array(
 //                    'type' => 'select',
 //                    'label' => $this->l('Checkout template'),
@@ -368,38 +315,21 @@ class PaysonCheckout2 extends PaymentModule
                 ),
                 array(
                     'type' => 'switch',
-                    'label' => $this->l('BankID'),
-                    'name' => 'PAYSONCHECKOUT2_VERIFICATION',
+                    'label' => $this->l('Link to other payment methods'),
+                    'name' => 'PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS',
                     'is_bool' => true,
                     'values' => array(
                         array(
-                            'id' => 'veri_on',
+                            'id' => 'link_pay_on',
                             'value' => 1,
                             'label' => $this->l('Yes'),),
                         array(
-                            'id' => 'veri_off',
+                            'id' => 'link_pay_off',
                             'value' => 0,
                             'label' => $this->l('No'),),
                     ),
-                    'desc' => $this->l('Select Yes to force customer identification by BankID'),
+                    'desc' => $this->l('Select Yes to show a link to other payment methods in One Page Checkout'),
                 ),
-//                array(
-//                    'type' => 'switch',
-//                    'label' => $this->l('Show other payment methods'),
-//                    'name' => 'PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS',
-//                    'is_bool' => true,
-//                    'values' => array(
-//                        array(
-//                            'id' => 'link_pay_on',
-//                            'value' => 1,
-//                            'label' => $this->l('Yes'),),
-//                        array(
-//                            'id' => 'link_pay_off',
-//                            'value' => 0,
-//                            'label' => $this->l('No'),),
-//                    ),
-//                    'desc' => $this->l('Select Yes to show a link to other payment methods'),
-//                ),
 //                array(
 //                    'type' => 'switch',
 //                    'label' => $this->l('Payson order confirmation page for all customers'),
@@ -457,24 +387,6 @@ class PaysonCheckout2 extends PaymentModule
             ),
         );
 
-        $fields_form[0]['form']['input'][] = array(
-            'type' => 'switch',
-            'label' => $this->l('Show newsletter checkbox'),
-            'name' => 'PAYSONCHECKOUT2_NEWSLETTER',
-            'is_bool' => true,
-            'values' => array(
-                array(
-                    'id' => 'newsl_on',
-                    'value' => 1,
-                    'label' => $this->l('Yes'),),
-                array(
-                    'id' => 'newsl_off',
-                    'value' => 0,
-                    'label' => $this->l('No'),),
-            ),
-            'desc' => $this->l('Check to show newsletter checkbox'),
-        );
-        
         if (defined('_PCO_SHOW_TERMS_')) {
             $fields_form[0]['form']['input'][] = array(
                 'type' => 'switch',
@@ -494,6 +406,118 @@ class PaysonCheckout2 extends PaymentModule
                 'desc' => $this->l('Select Yes to require customers to accept the terms and conditions'),
             );
         }
+        
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'switch',
+            'label' => $this->l('Show newsletter checkbox'),
+            'name' => 'PAYSONCHECKOUT2_NEWSLETTER',
+            'is_bool' => true,
+            'values' => array(
+                array(
+                    'id' => 'newsl_on',
+                    'value' => 1,
+                    'label' => $this->l('Yes'),),
+                array(
+                    'id' => 'newsl_off',
+                    'value' => 0,
+                    'label' => $this->l('No'),),
+            ),
+            'desc' => $this->l('Check to show newsletter checkbox'),
+        );
+        
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'select',
+            'label' => $this->l('Shipped order status'),
+            'name' => 'PAYSON_ORDER_SHIPPED_STATE',
+            'desc' => $this->l('Order status Shipped will be sent to Payson when this order status is set.'),
+            'options' => array(
+                'query' => $orderStates,
+                'id' => 'id_order_state',
+                'name' => 'name',
+            ),
+        );
+
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'select',
+            'label' => $this->l('Canceled order status'),
+            'name' => 'PAYSON_ORDER_CANCEL_STATE',
+            'desc' => $this->l('Order status Canceled will be sent to Payson when this order status is set.'),
+            'options' => array(
+                'query' => $orderStates,
+                'id' => 'id_order_state',
+                'name' => 'name',
+            ),
+        );
+
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'select',
+            'label' => $this->l('Refunded order status'),
+            'name' => 'PAYSON_ORDER_CREDITED_STATE',
+            'desc' => $this->l('Payson order will be refunded when this order status is set.'),
+            'options' => array(
+                'query' => $orderStates,
+                'id' => 'id_order_state',
+                'name' => 'name',
+            ),
+        );
+                
+        $fields_form[0]['form']['input'][] = array(
+            'type' => 'select',
+            'label' => $this->l('Color scheme'),
+            'name' => 'PAYSONCHECKOUT2_COLOR_SCHEME',
+            'desc' => $this->l('Payment window color scheme'),
+            'options' => array(
+                'query' => array(
+                    array(
+                        'value' => 'gray',
+                        'label' => $this->l('White form on gray background (default)'),),
+                    array(
+                        'value' => 'blue',
+                        'label' => $this->l('Blue form on white background'),),
+                    array(
+                        'value' => 'white',
+                        'label' => $this->l('White form on white background'),),
+                    array(
+                        'value' => 'GrayTextLogos',
+                        'label' => $this->l('White form on gray background with text bank logotypes'),),
+                    array(
+                        'value' => 'BlueTextLogos',
+                        'label' => $this->l('Blue form on white background with text bank logotypes'),),
+                    array(
+                        'value' => 'WhiteTextLogos',
+                        'label' => $this->l('White form on white background with text bank logotypes'),),
+                    array(
+                        'value' => 'GrayNoFooter',
+                        'label' => $this->l('Gray form on white background with no bank logotypes and no footer'),),
+                    array(
+                        'value' => 'BlueNoFooter',
+                        'label' => $this->l('Blue form on white background with no bank logotypes and no footer'),),
+                    array(
+                        'value' => 'WhiteNoFooter',
+                        'label' => $this->l('White form on white background with no bank logotypes and no footer'),),
+                ),
+                'id' => 'value',
+                'name' => 'label',
+            ),
+        );
+        
+       $fields_form[0]['form']['input'][] = array(
+            'type' => 'switch',
+            'label' => $this->l('BankID'),
+            'name' => 'PAYSONCHECKOUT2_VERIFICATION',
+            'is_bool' => true,
+            'values' => array(
+                array(
+                    'id' => 'veri_on',
+                    'value' => 1,
+                    'label' => $this->l('Yes'),),
+                array(
+                    'id' => 'veri_off',
+                    'value' => 0,
+                    'label' => $this->l('No'),),
+            ),
+            'desc' => $this->l('Select Yes to force customer identification by BankID'),
+        );
         
         $fields_form[0]['form']['input'][] = array(
             'type' => 'switch',

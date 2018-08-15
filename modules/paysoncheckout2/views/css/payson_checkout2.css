@@ -31,6 +31,19 @@ p.payment_module a.payment-payson-checkout2:hover {
     overflow:hidden;
 }
 
+#paysonpaymentwindow .other-payment-methods-link.cart_navigation {
+    margin-bottom: 10px;
+}
+
+#module-paysoncheckout2-pconepage #paysonpaymentwindow .other-payment-methods-link {
+    display: none;
+}
+
+#paysonpaymentwindow p.warning {
+    color: #F13340;
+    font-weight: 700;
+}
+
 .newsletter-checkbox {
     margin-bottom: 0px;
 }

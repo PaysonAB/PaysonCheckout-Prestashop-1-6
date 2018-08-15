@@ -80,6 +80,11 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                 $cartCurrency = new Currency($this->context->cart->id_currency);
                 PaysonCheckout2::paysonAddLog('Cart Currency: ' . $cartCurrency->iso_code);
                 
+                // Check Payson minimum order value
+                if (!$payson->checkMinAmount($this->context->cart)) {
+                    $errMess = $this->module->l('This order does not meet the Payson minimum order value of 4 SEK/0.4 EUR.', 'pconepage');
+                }
+                
                 // Check cart currency
                 if (!$payson->validPaysonCurrency($cartCurrency->iso_code)) {
                     $errMess = $this->module->l('Unsupported currency. Please use SEK or EUR.', 'pconepage');
@@ -178,7 +183,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     'paymentUrl' => $this->context->link->getModuleLink('paysoncheckout2', 'pconepage', array(), true),
                     'newsletter_optin_text' => $this->module->l('Sign up for our newsletter', 'pconepage'),
                 ));
-
+            
                 // Check for error and exit if any
                 if ($errMess !== false) {
                     throw new Exception($errMess);
@@ -208,11 +213,11 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                         }
                     }
                 }
-                
+                    
                 // Assign some more smarty tpl variables
                 $this->context->smarty->assign(array(
                     'pco_checkout_id' => $checkout->id,
-                    'payson_checkout' => $checkout->snippet,
+                    'payson_checkout' => $this->otherPayMethodLink() . $checkout->snippet,
                 ));
 
                 // Reset message
@@ -232,7 +237,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     if ($errMess != '') {
                         $errMess = '<p class="warning">' . $errMess . '</p>';
                     }
-                    die($errMess . $checkout->snippet);
+                    die($this->otherPayMethodLink() . $errMess . $checkout->snippet);
                 }
                 
                 // Show checkout
@@ -246,11 +251,11 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
             PaysonCheckout2::paysonAddLog('Checkout error: ' . $ex->getMessage(), 2);
 
             // Replace checkout snippet with error message
-            $this->context->smarty->assign('payson_checkout', $ex->getMessage());
+            $this->context->smarty->assign('payson_checkout', $this->otherPayMethodLink() . '<p class="warning">' . $ex->getMessage() . '</p>');
 
             // If AJAX return error message
             if (Tools::getIsset('pco_update')) {
-                die('<p class="warning">' . $ex->getMessage() . '</p>');
+                die($this->otherPayMethodLink() . '<p class="warning">' . $ex->getMessage() . '</p>');
             }
             
             // Show checkout
@@ -258,6 +263,14 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
         }
     }
 
+    public function otherPayMethodLink() 
+    {
+        if (Configuration::get('PAYSONCHECKOUT2_ONE_PAGE') == 1 && (int) Configuration::get('PS_ORDER_PROCESS_TYPE') == 1 && Configuration::get('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS') == 1) {
+            return '<p class="other-payment-methods-link cart_navigation clearfix"><a class="button-exclusive btn btn-default" href="' . $this->context->link->getPageLink('order-opc?disopc=1') . '"><i class="icon-chevron-left"></i>' . $this->module->l('Other payment options', 'pconepage') . '</a></p>';
+        }
+        return '';
+    }
+    
     protected function getCheckout($payson, $paysonApi, $customer, $cartCurrency, $address)
     {
         // Get or create checkout
