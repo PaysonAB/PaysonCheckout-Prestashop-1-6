@@ -75,13 +75,19 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
             
             $cart = new Cart($cartId);
 
-            if (!$cart->checkQuantities()) {
-                Tools::redirect('order.php?step=3');
-            }
-
             PaysonCheckout2::paysonAddLog('Cart ID: ' . $cart->id);
             PaysonCheckout2::paysonAddLog('Checkout ID: ' . $checkout->id);
             PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout->status);
+            
+            if ($checkout->status == 'readyToShip' && !$cart->checkQuantities()) {
+                PaysonCheckout2::paysonAddLog('A product has run out of stock between checkout and confirmation.');
+                // Delete checkout id cookie, force a new chckout
+                $this->context->cookie->__set('paysonCheckoutId', null);
+                // Set status canceled on Payson order
+                $paysonApi->CancelCheckout($checkout);
+                // Redirect to checkout
+                Tools::redirect('order.php?step=3');
+            }
 
             $newOrderId = false;
             $redirect = false;

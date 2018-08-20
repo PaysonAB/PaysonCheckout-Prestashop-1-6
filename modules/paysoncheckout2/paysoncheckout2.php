@@ -1349,7 +1349,7 @@ class PaysonCheckout2 extends PaymentModule
                     }
                     
                     if ($newOrderStatus->id == Configuration::get('PAYSON_ORDER_CREDITED_STATE', null, null, $order->id_shop)) {
-                        if ($checkout->status == 'shipped') {
+                        if ($checkout->status == 'shipped' || $checkout->status == 'paidToAccount') {
                             try {
                                 PaysonCheckout2::paysonAddLog('Updating Payson order status to credited.');
 
