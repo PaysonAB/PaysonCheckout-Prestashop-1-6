@@ -71,20 +71,23 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
             }
 
             $paysonApi = $payson->getPaysonApiInstance();
-            $checkout = $paysonApi->GetCheckout($checkoutId);
+            $checkoutClient = new \Payson\Payments\CheckoutClient($paysonApi);
+            $checkout = $checkoutClient->get(array('id' => $checkoutId));
             
             $cart = new Cart($cartId);
 
             PaysonCheckout2::paysonAddLog('Cart ID: ' . $cart->id);
-            PaysonCheckout2::paysonAddLog('Checkout ID: ' . $checkout->id);
-            PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout->status);
+            PaysonCheckout2::paysonAddLog('Checkout ID: ' . $checkout['id']);
+            PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout['status']);
             
-            if ($checkout->status == 'readyToShip' && !$cart->checkQuantities()) {
+            if ($checkout['status'] == 'readyToShip' && !$cart->checkQuantities()) {
                 PaysonCheckout2::paysonAddLog('A product has run out of stock between checkout and confirmation.');
                 // Delete checkout id cookie, force a new chckout
                 $this->context->cookie->__set('paysonCheckoutId', null);
                 // Set status canceled on Payson order
-                $paysonApi->CancelCheckout($checkout);
+                $checkout['status'] = 'canceled';
+                $checkoutClient->update($checkout);
+                
                 // Redirect to checkout
                 Tools::redirect('order.php?step=3');
             }
@@ -95,7 +98,7 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
             // For testing
             //$checkout->status = 'canceled';
 
-            switch ($checkout->status) {
+            switch ($checkout['status']) {
                 case 'readyToShip':
                     if ($cart->OrderExists() == false) {
                         // Create PS order
@@ -111,15 +114,15 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                 case 'denied':
                     //$redirect = 'order.php?step=3';
                     $redirect = 'index.php?fc=module&module=paysoncheckout2&controller=pconepage';
-                    $this->context->cookie->__set('validation_error', $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout->status . '".');
+                    $this->context->cookie->__set('validation_error', $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout['status'] . '".');
                     break;
                 case 'canceled':
                 case 'expired':
                 case 'shipped':
-                    throw new Exception($this->module->l('Unable to show confirmation.', 'confirmation') . ' ' . $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout->status . '".');
+                    throw new Exception($this->module->l('Unable to show confirmation.', 'confirmation') . ' ' . $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout['status'] . '".');
                 default:
                     $redirect = 'order.php?step=3';
-                    $this->context->cookie->__set('validation_error', $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout->status . '".');
+                    $this->context->cookie->__set('validation_error', $this->module->l('Payment status was', 'confirmation') . ' "' . $checkout['status'] . '".');
             }
 
             // Delete checkout id cookie
@@ -127,7 +130,7 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
 
             if ($redirect !== false) {
                 $payson->updatePaysonOrderEvent($checkout, $cartId);
-                PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout->status);
+                PaysonCheckout2::paysonAddLog('Checkout Status: ' . $checkout['status']);
                 PaysonCheckout2::paysonAddLog('Unable to display confirmation, redirecting to: ' . $redirect);
                 Tools::redirect($redirect);
             }
@@ -135,7 +138,7 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
             $order = new Order((int) $newOrderId);
             $this->context->cookie->__set('id_customer', $order->id_customer);
 
-            $this->context->smarty->assign('payson_checkout', $checkout->snippet);
+            $this->context->smarty->assign('payson_checkout', $checkout['snippet']);
             $this->context->smarty->assign('HOOK_ORDER_CONFIRMATION', Hook::exec('OrderConfirmation', array('objOrder' => $order)));
 
             // Show confirmation
