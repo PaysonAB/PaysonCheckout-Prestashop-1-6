@@ -158,6 +158,7 @@ class Connector
      * Validate API base URL
      *
      * @throws PaysonException if base API URL is empty or invalid
+     * 
      */
     private function validateBaseApiUrl()
     {

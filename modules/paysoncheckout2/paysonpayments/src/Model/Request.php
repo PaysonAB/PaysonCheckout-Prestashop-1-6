@@ -119,36 +119,6 @@ class Request
     }
 
     /**
-     * Return the API uri parameters
-     *
-     * @return string
-     */
-    public function getUriParameters()
-    {
-        return $this->uriParameters;
-    }
-
-    /**
-     * Set the API uri parameters
-     *
-     * @param array $uriParameters
-     */
-    public function setUriParameters($uriParameters)
-    {
-        $uriParametersString = "?";
-        foreach($uriParameters as $key => $value)
-        {
-            if(is_bool($value))
-            {
-                $value = $value ? 'true' : 'false';
-            }
-            $uriParametersString = $uriParametersString . $key . "=" . $value . "&";
-        }
-        $uriParametersString = substr_replace($uriParametersString, "", -1);
-        $this->uriParameters = $uriParametersString;
-    }
-
-    /**
      * Return full request API url
      *
      * @return string

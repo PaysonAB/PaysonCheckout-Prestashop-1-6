@@ -2,7 +2,7 @@
 
 namespace Payson\Payments\Transport;
 
-use Payson\Payments\PaysonException;
+use Payson\Payments\Exception\PaysonException;
 use Payson\Payments\Exception\ExceptionCodeList;
 use Payson\Payments\Model\Request;
 
@@ -38,9 +38,6 @@ class ApiClient
      */
     public function sendRequest(Request $request)
     {
-        //echo $request->getApiUrl();
-        //echo $request->getMethod();
-        //echo $request->getAuthorizationString();
         $header = array();
         $header[] = 'Content-Type: application/json';
         $header[] = 'Authorization: Basic ' . $request->getAuthorizationString();
@@ -61,7 +58,6 @@ class ApiClient
         $errorNumber = $this->curlClient->getErrorNumber();
 
         $headerSize = $this->curlClient->getInfo(CURLINFO_HEADER_SIZE);
-        $responseHeader = substr($httpResponse, 0, $headerSize);
         $responseBody = substr($httpResponse, $headerSize);
         
         $this->curlClient->close();
@@ -70,7 +66,7 @@ class ApiClient
             throw new PaysonException($httpError, ExceptionCodeList::COMMUNICATION_ERROR);
         }
 
-        $responseHandler = new ResponseHandler($httpResponse, $httpCode, $responseHeader, $responseBody);
+        $responseHandler = new ResponseHandler($httpResponse, $httpCode, $responseBody);
         $responseHandler->handleClientResponse();
         
         return $responseHandler;

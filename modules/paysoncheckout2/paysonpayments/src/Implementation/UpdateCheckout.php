@@ -36,6 +36,7 @@ class UpdateCheckout extends ImplementationManager
         $this->requestModel = new Request();
         $this->requestModel->setPutMethod();
         $this->requestModel->setBody(json_encode($data));
+        
         $this->requestModel->setApiUrl($this->connector->getBaseApiUrl() . $this->apiUrl . $checkoutId);
     }
 

@@ -157,7 +157,7 @@ abstract class ValidationService
             );
         }
 
-        if (count($data) < 1) {
+        if (is_array($data) && count($data) < 1) {
             throw new PaysonException(
                 "$dataTitle must not be empty array!",
                 ExceptionCodeList::INPUT_VALIDATION_ERROR

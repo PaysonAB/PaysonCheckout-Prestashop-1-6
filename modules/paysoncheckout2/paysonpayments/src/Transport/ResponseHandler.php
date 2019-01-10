@@ -26,10 +26,6 @@ class ResponseHandler
      */
     private $content;
 
-    /**
-     * @var array $header
-     */
-    private $header;
 
     /**
      * Json string
@@ -50,16 +46,12 @@ class ResponseHandler
      * @param $content
      * @param $httpCode
      */
-    public function __construct($content, $httpCode, $responseHeader, $responseBody)
+    public function __construct($content, $httpCode, $responseBody)
     {
         $this->content = $content;
         $this->httpCode = $httpCode;
 
-        $this->header = $responseHeader;
         $this->body = $responseBody;
-        
-        //$this->setHeader();
-        //$this->setBody();
     }
 
     /**
@@ -114,22 +106,6 @@ class ResponseHandler
     }
 
     /**
-     * Prepare body
-     */
-    public function setBody()
-    {
-        /**
-         * Split the string on "double" new line.
-         * We use Windows "end of line" char
-         */
-        $arrRequests = explode("\r\n\r\n", $this->content, 2); // Split on first occurrence
-
-        if (is_array($arrRequests) && count($arrRequests) > 1) {
-            $this->body = $arrRequests[1];
-        }
-    }
-
-    /**
      * @return mixed
      */
     public function getHttpCode()
@@ -150,39 +126,6 @@ class ResponseHandler
         }
 
         return $returnData;
-    }
-
-    /**
-     * @return array
-     */
-    public function getHeader()
-    {
-        return $this->header;
-    }
-
-    /**
-     * Create array of header information
-     */
-    public function setHeader()
-    {
-        $headers = array();
-
-        /**
-         * Split the string on "double" new line.
-         * We use Windows "end of line" char
-         */
-        $arrRequests = explode("\r\n\r\n", $this->content); // Split on first occurrence
-        $headerLines = explode("\r\n", $arrRequests[0]); // Split on first occurrence
-        $headers['http_code'] = $headerLines[0];
-
-        foreach ($headerLines as $i => $line) {
-            if ($i > 0) {
-                list ($key, $value) = explode(':', $line, 2); // Split on first occurrence
-                $headers[trim($key)] = trim($value);
-            }
-        }
-
-        $this->header = $headers;
     }
 
     /**

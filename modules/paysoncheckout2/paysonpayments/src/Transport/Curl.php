@@ -3,7 +3,7 @@
 namespace Payson\Payments\Transport;
 
 /**
- * Class CurlRequest
+ * Class Curl
  *
  * @package Payson\Payments\Transport
  */

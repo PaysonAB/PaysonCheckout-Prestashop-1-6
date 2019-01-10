@@ -10,7 +10,7 @@ class ExceptionCodeList
     const MISSING_API_BASE_URL = 20003;
     const INCORRECT_API_BASE_URL = 20004;
     const INPUT_VALIDATION_ERROR = 30000;
-    const UNKNOWN_CODE_MESSAGE = 'Unknown code error';
+    const UNKNOWN_CODE_MESSAGE = 'Unknown error';
 
     /**
      * Return Message for exception code

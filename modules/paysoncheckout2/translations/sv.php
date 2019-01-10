@@ -3,7 +3,7 @@
 global $_MODULE;
 $_MODULE = array();
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_d9ced9ff2c00b058ebb12a987e537c43'] = 'Payson Checkout 2.0';
-$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_b09e4836ad3384c8e31d902583b64aab'] = 'Säkra betalningar. Faktura, kort, internetbank eller delbetalning.';
+$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_acac44a3869051207b422d125cc0442b'] = 'Säkra betalningar med Payson. Faktura, delbetalning, kort eller bank.';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_a02758d758e8bec77a33d7f392eb3f8a'] = 'Ingen valuta inställd för modul.';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_c98133549a6943937cd3d4c70887e451'] = 'Betald med Payson Checkout 2.0';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_5508a53851720a210e50f7b8a6f66f46'] = 'Du måste godkänna våra köpvillkor innan du fortsätter.';
@@ -26,10 +26,6 @@ $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_0e17931b3f95c6936de39e98d
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_c87ac2cddf59b88572137c3206853d72'] = 'Välj Ja för att visa en länk till andra betalmetoder på One Page Checkout';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_57b3523265d9e7149fe32fa61757c3ad'] = 'Visa Paysons kvittosida';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_6172056abc1a0a20f6a09b14f9982bfe'] = 'Visa standard kvittosida';
-$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_ba0da5c61a86e1fcf4ad4aa3f8f29eaf'] = 'Visa telefon';
-$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_573b61eb6d7d9ce579ef89bd39176a3d'] = 'Visa telefon i betalfönstret';
-$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_1f733fd894bb6d863fbd7623f28642ab'] = 'Kräv telefon';
-$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_7aa1adcba7bad85115ef75c818dbbc30'] = 'Kräv att kunden anger telefon';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_c9cc8cce247e49bae79f15173ce97354'] = 'Spara';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_8bf3fac6472fda8e32d888cf170353c6'] = 'Visa köpvillkor';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_b54c9905da4e495a9449d7574174a498'] = 'Kräv att kunderna godkänner butikens köpvillkor på One Page Checkout';
@@ -54,6 +50,10 @@ $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_1640b09f245326cee9ce3add1
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_bc3a94129af6e1d8876ecbda0b6f9bac'] = 'Vitt formulär på vit bakgrund utan loggor';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_734f577171b991d64704baf83fc345cc'] = 'BankID';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_9af330aec2727429751e384afc6b80bd'] = 'Kräv identifiering med BankID';
+$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_ba0da5c61a86e1fcf4ad4aa3f8f29eaf'] = 'Visa telefon';
+$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_e41f5d1d0516474e48955df1bfb7c240'] = 'Inställningar för telefon';
+$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_8d283002e45f7ef1397920f1238a178a'] = 'Ja, kräv';
+$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_70d6b9b67a5e4b0db5ae0b9a0f0a3b7e'] = 'Ja, valfritt';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_e2df88d18771a2d4d16d7fe1a8a64a61'] = 'Logga meddelanden';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_515620c51e10b0357072fa4e05a666a6'] = 'Logga meddelanden från Payson Checkout 2.0';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_0420294f1634895d8a843f93dab3e95c'] = 'Checkout ID:';
