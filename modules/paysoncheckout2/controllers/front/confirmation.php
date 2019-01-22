@@ -1,6 +1,6 @@
 <?php
 /**
- * 2018 Payson AB
+ * 2019 Payson AB
  *
  * NOTICE OF LICENSE
  *
@@ -10,7 +10,7 @@
  * http://opensource.org/licenses/afl-3.0.php
  *
  *  @author    Payson AB <integration@payson.se>
- *  @copyright 2018 Payson AB
+ *  @copyright 2019 Payson AB
  *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
@@ -103,6 +103,11 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                     if ($cart->OrderExists() == false) {
                         // Create PS order
                         $newOrderId = $payson->createOrderPS($cart->id, $checkout);
+
+                        // Set order id
+                        $checkout['merchant']['reference'] = $newOrderId;
+                        $checkoutClient->update($checkout);
+                        
                         PaysonCheckout2::paysonAddLog('New order ID: ' . $newOrderId);
                     } else {
                         PaysonCheckout2::paysonAddLog('Order already created.');

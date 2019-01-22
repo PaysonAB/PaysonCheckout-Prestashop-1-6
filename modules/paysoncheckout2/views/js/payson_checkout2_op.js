@@ -1,5 +1,5 @@
 /*
-* 2018 Payson AB
+* 2019 Payson AB
 *
 * NOTICE OF LICENSE
 *
@@ -9,7 +9,7 @@
 * http://opensource.org/licenses/afl-3.0.php
 *
 *  @author    Payson AB <integration@payson.se>
-*  @copyright 2018 Payson AB
+*  @copyright 2019 Payson AB
 *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 */
 
@@ -17,6 +17,8 @@
 
 $(document).ready(function() {
     if (page_name === 'order-opc') {
+        // Add class
+        $('body').addClass('module-paysoncheckout2-pconepage');
         cartAmount = $("#total_price").text();
         // Detect completed  AJAX
         $(document).ajaxComplete(function(event, xhr, settings) {

@@ -1,6 +1,6 @@
 <?php
 /**
- * 2018 Payson AB
+ * 2019 Payson AB
  *
  * NOTICE OF LICENSE
  *
@@ -10,15 +10,13 @@
  * http://opensource.org/licenses/afl-3.0.php
  *
  *  @author    Payson AB <integration@payson.se>
- *  @copyright 2018 Payson AB
+ *  @copyright 2019 Payson AB
  *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
 if (!defined('_PS_VERSION_')) {
     exit;
 }
-
-define('_PCO_SHOW_TERMS_', true);
 
 class PaysonCheckout2 extends PaymentModule
 {
@@ -29,7 +27,7 @@ class PaysonCheckout2 extends PaymentModule
     {
         $this->name = 'paysoncheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '2.0.16';
+        $this->version = '2.0.17';
         $this->ps_versions_compliancy = array('min' => '1.6.0.14', 'max' => _PS_VERSION_);
         $this->author = 'Payson AB';
         $this->module_key = '4015ee54469de01eaa9150b76054547e';
@@ -40,7 +38,7 @@ class PaysonCheckout2 extends PaymentModule
         parent::__construct();
 
         $this->displayName = $this->l('Payson Checkout 2.0');
-        $this->description = $this->l('Pay with Payson via invoice, card, internet bank or partial payments.');
+        $this->description = $this->l('Offer secure payments with Payson. Customers can pay by invoice, partial payments, card or internet bank');
 
         $this->moduleVersion = sprintf('payson_checkout2_prestashop16|%s|%s', $this->version, _PS_VERSION_);
 
@@ -71,6 +69,8 @@ class PaysonCheckout2 extends PaymentModule
         Configuration::updateValue('PAYSONCHECKOUT2_SHOW_CONFIRMATION', 1);
         Configuration::updateValue('PAYSONCHECKOUT2_SHOW_TERMS', 0);
         Configuration::updateValue('PAYSONCHECKOUT2_NEWSLETTER', 0);
+        Configuration::updateValue('PAYSONCHECKOUT2_USE_CUSTOM_CSS', 0);
+        Configuration::updateValue('PAYSONCHECKOUT2_CUSTOM_CSS', '.module-paysoncheckout2-pconepage .page-heading{color:red;}');
 
         $this->createPaysonOrderTable();
 
@@ -102,7 +102,10 @@ class PaysonCheckout2 extends PaymentModule
                 Configuration::deleteByName('PAYSONCHECKOUT2_MODULE_ENABLED') == false ||
                 Configuration::deleteByName('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS') == false ||
                 Configuration::deleteByName('PAYSONCHECKOUT2_SHOW_TERMS') == false ||
-                Configuration::deleteByName('PAYSONCHECKOUT2_NEWSLETTER') == false
+                Configuration::deleteByName('PAYSONCHECKOUT2_NEWSLETTER') == false ||
+                Configuration::deleteByName('PAYSONCHECKOUT2_CUSTOM_CSS') == false ||
+                Configuration::deleteByName('PAYSONCHECKOUT2_USE_CUSTOM_CSS') == false
+                
         ) {
             return false;
         }
@@ -154,6 +157,10 @@ class PaysonCheckout2 extends PaymentModule
         Media::addJsDef(array('acceptTermsMessage' => $this->l('You must agree to the terms of service before continuing.')));
         
         $this->context->controller->addCSS(_MODULE_DIR_ . 'paysoncheckout2/views/css/payson_checkout2.css', 'all');
+        
+        if ((int) Configuration::get('PAYSONCHECKOUT2_USE_CUSTOM_CSS') == 1) {
+            $this->context->controller->addCSS(_MODULE_DIR_ . 'paysoncheckout2/views/css/custom.css', 'all');
+        }
     }
     
     public function checkCurrency($cart)
@@ -216,33 +223,86 @@ class PaysonCheckout2 extends PaymentModule
             Configuration::updateValue('PAYSONCHECKOUT2_PHONE', Tools::getValue('PAYSONCHECKOUT2_PHONE'));
             Configuration::updateValue('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS', Tools::getValue('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS'));
             Configuration::updateValue('PAYSONCHECKOUT2_NEWSLETTER', (int) Tools::getValue('PAYSONCHECKOUT2_NEWSLETTER'));
-            if (!defined('_PCO_SHOW_TERMS_')) {
-                Configuration::updateValue('PAYSONCHECKOUT2_SHOW_TERMS', 0);
-            } else {
-                Configuration::updateValue('PAYSONCHECKOUT2_SHOW_TERMS', (int) Tools::getValue('PAYSONCHECKOUT2_SHOW_TERMS'));
-            }
+            Configuration::updateValue('PAYSONCHECKOUT2_SHOW_TERMS', (int) Tools::getValue('PAYSONCHECKOUT2_SHOW_TERMS'));
             $saved = true;
         }
 
+        if (Tools::isSubmit('btnCssSubmit')) {
+            Configuration::updateValue('PAYSONCHECKOUT2_CUSTOM_CSS', Tools::getValue('PAYSONCHECKOUT2_CUSTOM_CSS'));
+            Configuration::updateValue('PAYSONCHECKOUT2_USE_CUSTOM_CSS', (int) Tools::getValue('PAYSONCHECKOUT2_USE_CUSTOM_CSS'));
+            
+            // Save to file
+            $customCssFile = dirname(__FILE__) . '/views/css/custom.css';
+            file_put_contents($customCssFile, Configuration::get('PAYSONCHECKOUT2_CUSTOM_CSS', ''));
+            
+            $saved = true;
+        }
+        
         $this->context->smarty->assign(array(
             'errorMSG' => $errors,
             'isSaved' => $saved,
             'commonform' => $this->createSettingsForm(),
+            'cssform' => $this->createCSSForm(),
         ));
 
         return $this->display(__FILE__, 'views/templates/admin/payson_admin.tpl');
+    }
+    
+    public function createCSSForm()
+    {
+        $css_form = array();
+        $css_form[0]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('Custom CSS is used to change the appearance of the Payson One Page Checkout'),
+                'icon' => '',
+            ),
+            'input' => array(
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Use custom CSS'),
+                    'name' => 'PAYSONCHECKOUT2_USE_CUSTOM_CSS',
+                    'is_bool' => true,
+                    'values' => array(
+                        array(
+                            'id' => 'ccss_on',
+                            'value' => 1,
+                            'label' => $this->l('Yes'),
+                        ),
+                        array(
+                            'id' => 'ccss_off',
+                            'value' => 0,
+                            'label' => $this->l('No'),
+                        ),
+                    ),
+                    'desc' => '',
+                ),
+                array(
+                    'type' => 'textarea',
+                    'label' => $this->l('Custom CSS'),
+                    'name' => 'PAYSONCHECKOUT2_CUSTOM_CSS',
+                    'rows' => 30,
+                    'desc' => $this->l('Make sure to use well formatted CSS or you may brake the checkout!'),
+                ),
+            ),
+            'submit' => array(
+                'title' => $this->l('Save'),
+            ),
+        );
+                
+        $helper = $this->getFormHelper();
+        $helper->submit_action = 'btnCssSubmit';
+        return $helper->generateForm($css_form);
     }
 
     public function createSettingsForm()
     {
         $orderStates = OrderState::getOrderStates((int) $this->context->cookie->id_lang);
         array_unshift($orderStates, array('id_order_state' => '-1', 'name' => $this->l('Deactivated')));
-        //$orderStates[] = array('id_order_state' => '-1', 'name' => $this->l('Deactivated'));
-
+        
         $fields_form = array();
         $fields_form[0]['form'] = array(
             'legend' => array(
-                'title' => '',
+                'title' => $this->l('Agent'),
                 'icon' => '',
             ),
             'input' => array(
@@ -255,13 +315,15 @@ class PaysonCheckout2 extends PaymentModule
                         array(
                             'id' => 'testmode_on',
                             'value' => 1,
-                            'label' => $this->l('Yes'),),
+                            'label' => $this->l('Yes'),
+                        ),
                         array(
                             'id' => 'testmode_off',
                             'value' => 0,
-                            'label' => $this->l('No'),),
+                            'label' => $this->l('No'),
+                        ),
                     ),
-                    'desc' => $this->l('In Test mode no Agent ID or API Key is required'),
+                    'desc' => $this->l('Verify your installation in test mode before going live'),
                 ),
                 array(
                     'type' => 'text',
@@ -269,7 +331,7 @@ class PaysonCheckout2 extends PaymentModule
                     'name' => 'PAYSONCHECKOUT2_AGENTID',
                     'class' => 'fixed-width-lg',
                     'required' => false,
-                    'desc' => $this->l('Enter your Agent ID for Payson Checkout 2.0'),
+                    'desc' => $this->l('Enter your Agent ID'),
                 ),
                 array(
                     'type' => 'text',
@@ -277,19 +339,118 @@ class PaysonCheckout2 extends PaymentModule
                     'name' => 'PAYSONCHECKOUT2_APIKEY',
                     'class' => 'fixed-width-lg',
                     'required' => false,
-                    'desc' => $this->l('Enter your API Key for Payson Checkout 2.0'),
+                    'desc' => $this->l('Enter your API-key'),
+                )
+            )
+        );
+  
+        $fields_form[1]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('Order managment'),
+                'icon' => '',
+            ),
+            'input' => array(
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Shipped order status'),
+                    'name' => 'PAYSON_ORDER_SHIPPED_STATE',
+                    'desc' => $this->l('Order status Shipped will be sent to Payson when this order status is set.'),
+                    'options' => array(
+                        'query' => $orderStates,
+                        'id' => 'id_order_state',
+                        'name' => 'name',
+                    ),
                 ),
-//                array(
-//                    'type' => 'select',
-//                    'label' => $this->l('Checkout template'),
-//                    'name' => 'PAYSONCHECKOUT2_TEMPLATE',
-//                    'desc' => $this->l('Checkout layout template.'),
-//                    'options' => array(
-//                        'query' => array(array('id_option' => 'one_page_l', 'name' => $this->l('Left aligned')), array('id_option' => 'one_page_r', 'name' => $this->l('Right aligned'))),
-//                        'id' => 'id_option',
-//                        'name' => 'name',
-//                    ),
-//                ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Canceled order status'),
+                    'name' => 'PAYSON_ORDER_CANCEL_STATE',
+                    'desc' => $this->l('Order status Canceled will be sent to Payson when this order status is set.'),
+                    'options' => array(
+                        'query' => $orderStates,
+                        'id' => 'id_order_state',
+                        'name' => 'name',
+                    ),
+                ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Refunded order status'),
+                    'name' => 'PAYSON_ORDER_CREDITED_STATE',
+                    'desc' => $this->l('Payson order will be refunded when this order status is set.'),
+                    'options' => array(
+                        'query' => $orderStates,
+                        'id' => 'id_order_state',
+                        'name' => 'name',
+                    ),
+                ),
+            )
+        );
+
+        $fields_form[2]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('Payment window'),
+                'icon' => '',
+            ),
+            'input' => array(
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Color scheme'),
+                    'name' => 'PAYSONCHECKOUT2_COLOR_SCHEME',
+                    'desc' => $this->l('Payment window color scheme'),
+                    'options' => array(
+                        'query' => array(
+                            array(
+                                'value' => 'white',
+                                'label' => $this->l('White'),
+                            ),
+                            array(
+                                'value' => 'gray',
+                                'label' => $this->l('Gray'),
+                            ),
+                        ),
+                        'id' => 'value',
+                        'name' => 'label',
+                    ),
+                ),
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('BankID'),
+                    'name' => 'PAYSONCHECKOUT2_VERIFICATION',
+                    'is_bool' => true,
+                    'values' => array(
+                        array(
+                            'id' => 'veri_on',
+                            'value' => 1,
+                            'label' => $this->l('Yes'),
+                        ),
+                        array(
+                            'id' => 'veri_off',
+                            'value' => 0,
+                            'label' => $this->l('No'),
+                        ),
+                    ),
+                    'desc' => $this->l('Select Yes to force customer identification by BankID'),
+                ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Show phone'),
+                    'name' => 'PAYSONCHECKOUT2_PHONE',
+                    'desc' => $this->l('Settings for phone'),
+                    'options' => array(
+                        'query' => array(array('id_option' => 'required', 'name' => $this->l('Yes, required')), array('id_option' => 'optional', 'name' => $this->l('Yes, optional')), array('id_option' => 'no', 'name' => $this->l('No'))),
+                        'id' => 'id_option',
+                        'name' => 'name',
+                    ),
+                ),
+            )
+        );
+        
+        $fields_form[3]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('One Page Checkout'),
+                'icon' => '',
+            ),
+            'input' => array(
                 array(
                     'type' => 'switch',
                     'label' => $this->l('One Page Checkout'),
@@ -299,217 +460,121 @@ class PaysonCheckout2 extends PaymentModule
                         array(
                             'id' => 'op_on',
                             'value' => 1,
-                            'label' => $this->l('Yes'), ),
+                            'label' => $this->l('Yes'),
+                        ),
                         array(
                             'id' => 'op_off',
                             'value' => 0,
-                            'label' => $this->l('No'), ),
+                            'label' => $this->l('No'),
+                        ),
                     ),
                     'desc' => $this->l('Select Yes to show the payment window on the checkout page'),
                 ),
                 array(
                     'type' => 'switch',
-                    'label' => $this->l('Link to other payment methods'),
+                    'label' => $this->l('Show other payment methods'),
                     'name' => 'PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS',
                     'is_bool' => true,
                     'values' => array(
                         array(
                             'id' => 'link_pay_on',
                             'value' => 1,
-                            'label' => $this->l('Yes'),),
+                            'label' => $this->l('Yes'),
+                        ),
                         array(
                             'id' => 'link_pay_off',
                             'value' => 0,
-                            'label' => $this->l('No'),),
+                            'label' => $this->l('No'),
+                        ),
                     ),
-                    'desc' => $this->l('Select Yes to show a link to other payment methods in One Page Checkout'),
+                    'desc' => $this->l('Select Yes to show a link to other payment methods'),
                 ),
-//                array(
-//                    'type' => 'switch',
-//                    'label' => $this->l('Payson order confirmation page for all customers'),
-//                    'name' => 'PAYSONCHECKOUT2_SHOW_CONFIRMATION',
-//                    'is_bool' => true,
-//                    'values' => array(
-//                        array(
-//                            'id' => 'conf_on',
-//                            'value' => 1,
-//                            'label' => $this->l('Yes'), ),
-//                        array(
-//                            'id' => 'conf_off',
-//                            'value' => 0,
-//                            'label' => $this->l('No'), ),
-//                    ),
-//                    'desc' => $this->l('Select No to show store default confirmation page for logged in customers'),
-//                ),
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Show newsletter checkbox'),
+                    'name' => 'PAYSONCHECKOUT2_NEWSLETTER',
+                    'is_bool' => true,
+                    'values' => array(
+                        array(
+                            'id' => 'newsl_on',
+                            'value' => 1,
+                            'label' => $this->l('Yes'),
+                        ),
+                        array(
+                            'id' => 'newsl_off',
+                            'value' => 0,
+                            'label' => $this->l('No'),
+                        ),
+                    ),
+                    'desc' => $this->l('Check to show newsletter checkbox'),
+                ),
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Show terms checkbox'),
+                    'name' => 'PAYSONCHECKOUT2_SHOW_TERMS',
+                    'is_bool' => true,
+                    'values' => array(
+                        array(
+                            'id' => 'terms_on',
+                            'value' => 1,
+                            'label' => $this->l('Yes'),
+                        ),
+                        array(
+                            'id' => 'terms_off',
+                            'value' => 0,
+                            'label' => $this->l('No'),
+                        ),
+                    ),
+                    'desc' => $this->l('Select Yes to require customers to accept the terms and conditions'),
+                )
+            )
+        );
+        
+        $fields_form[4]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('Log'),
+                'icon' => '',
+            ),
+            'input' => array(
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Log messages'),
+                    'name' => 'PAYSONCHECKOUT2_LOG',
+                    'is_bool' => true,
+                    'values' => array(
+                        array(
+                            'id' => 'log_on',
+                            'value' => 1,
+                            'label' => $this->l('Yes'),
+                        ),
+                        array(
+                            'id' => 'log_off',
+                            'value' => 0,
+                            'label' => $this->l('No'),
+                        ),
+                    ),
+                    'desc' => $this->l('Check to log messages from Payson Checkout 2.0'),
+                )
+            )
+        );
+        
+        $fields_form[5]['form'] = array(
+            'legend' => array(
+                'title' => $this->l('Save changes'),
+                'icon' => '',
             ),
             'submit' => array(
                 'title' => $this->l('Save'),
-            ),
+            )
         );
+        
+        $helper = $this->getFormHelper();
+        $helper->submit_action = 'btnSettingsSubmit';
+        return $helper->generateForm($fields_form);
+    }
 
-        if (defined('_PCO_SHOW_TERMS_')) {
-            $fields_form[0]['form']['input'][] = array(
-                'type' => 'switch',
-                'label' => $this->l('Show terms checkbox'),
-                'name' => 'PAYSONCHECKOUT2_SHOW_TERMS',
-                'is_bool' => true,
-                'values' => array(
-                    array(
-                        'id' => 'terms_on',
-                        'value' => 1,
-                        'label' => $this->l('Yes'), ),
-                    array(
-                        'id' => 'terms_off',
-                        'value' => 0,
-                        'label' => $this->l('No'), ),
-                ),
-                'desc' => $this->l('Select Yes to require customers to accept the terms and conditions'),
-            );
-        }
-        
-        $fields_form[0]['form']['input'][] = array(
-            'type' => 'switch',
-            'label' => $this->l('Show newsletter checkbox'),
-            'name' => 'PAYSONCHECKOUT2_NEWSLETTER',
-            'is_bool' => true,
-            'values' => array(
-                array(
-                    'id' => 'newsl_on',
-                    'value' => 1,
-                    'label' => $this->l('Yes'),),
-                array(
-                    'id' => 'newsl_off',
-                    'value' => 0,
-                    'label' => $this->l('No'),),
-            ),
-            'desc' => $this->l('Check to show newsletter checkbox'),
-        );
-        
-        $fields_form[0]['form']['input'][] = array(
-            'type' => 'select',
-            'label' => $this->l('Shipped order status'),
-            'name' => 'PAYSON_ORDER_SHIPPED_STATE',
-            'desc' => $this->l('Order status Shipped will be sent to Payson when this order status is set.'),
-            'options' => array(
-                'query' => $orderStates,
-                'id' => 'id_order_state',
-                'name' => 'name',
-            ),
-        );
-
-        $fields_form[0]['form']['input'][] = array(
-            'type' => 'select',
-            'label' => $this->l('Canceled order status'),
-            'name' => 'PAYSON_ORDER_CANCEL_STATE',
-            'desc' => $this->l('Order status Canceled will be sent to Payson when this order status is set.'),
-            'options' => array(
-                'query' => $orderStates,
-                'id' => 'id_order_state',
-                'name' => 'name',
-            ),
-        );
-
-        $fields_form[0]['form']['input'][] = array(
-            'type' => 'select',
-            'label' => $this->l('Refunded order status'),
-            'name' => 'PAYSON_ORDER_CREDITED_STATE',
-            'desc' => $this->l('Payson order will be refunded when this order status is set.'),
-            'options' => array(
-                'query' => $orderStates,
-                'id' => 'id_order_state',
-                'name' => 'name',
-            ),
-        );
-                
-        $fields_form[0]['form']['input'][] = array(
-            'type' => 'select',
-            'label' => $this->l('Color scheme'),
-            'name' => 'PAYSONCHECKOUT2_COLOR_SCHEME',
-            'desc' => $this->l('Payment window color scheme'),
-            'options' => array(
-                'query' => array(
-                    array(
-                        'value' => 'gray',
-                        'label' => $this->l('White form on gray background (default)'),),
-                    array(
-                        'value' => 'blue',
-                        'label' => $this->l('Blue form on white background'),),
-                    array(
-                        'value' => 'white',
-                        'label' => $this->l('White form on white background'),),
-                    array(
-                        'value' => 'GrayTextLogos',
-                        'label' => $this->l('White form on gray background with text bank logotypes'),),
-                    array(
-                        'value' => 'BlueTextLogos',
-                        'label' => $this->l('Blue form on white background with text bank logotypes'),),
-                    array(
-                        'value' => 'WhiteTextLogos',
-                        'label' => $this->l('White form on white background with text bank logotypes'),),
-                    array(
-                        'value' => 'GrayNoFooter',
-                        'label' => $this->l('Gray form on white background with no bank logotypes and no footer'),),
-                    array(
-                        'value' => 'BlueNoFooter',
-                        'label' => $this->l('Blue form on white background with no bank logotypes and no footer'),),
-                    array(
-                        'value' => 'WhiteNoFooter',
-                        'label' => $this->l('White form on white background with no bank logotypes and no footer'),),
-                ),
-                'id' => 'value',
-                'name' => 'label',
-            ),
-        );
-        
-       $fields_form[0]['form']['input'][] = array(
-            'type' => 'switch',
-            'label' => $this->l('BankID'),
-            'name' => 'PAYSONCHECKOUT2_VERIFICATION',
-            'is_bool' => true,
-            'values' => array(
-                array(
-                    'id' => 'veri_on',
-                    'value' => 1,
-                    'label' => $this->l('Yes'),),
-                array(
-                    'id' => 'veri_off',
-                    'value' => 0,
-                    'label' => $this->l('No'),),
-            ),
-            'desc' => $this->l('Select Yes to force customer identification by BankID'),
-        );
-        
-       
-       $fields_form[0]['form']['input'][] = array(
-            'type' => 'select',
-            'label' => $this->l('Show phone'),
-            'name' => 'PAYSONCHECKOUT2_PHONE',
-            'desc' => $this->l('Settings for phone'),
-            'options' => array(
-                'query' => array(array('id_option' => 'required', 'name' => $this->l('Yes, required')), array('id_option' => 'optional', 'name' => $this->l('Yes, optional')), array('id_option' => 'no', 'name' => $this->l('No'))),
-                'id' => 'id_option',
-                'name' => 'name',
-            ),
-        );
-       
-        $fields_form[0]['form']['input'][] = array(
-            'type' => 'switch',
-            'label' => $this->l('Log messages'),
-            'name' => 'PAYSONCHECKOUT2_LOG',
-            'is_bool' => true,
-            'values' => array(
-                array(
-                    'id' => 'log_on',
-                    'value' => 1,
-                    'label' => $this->l('Yes'),),
-                array(
-                    'id' => 'log_off',
-                    'value' => 0,
-                    'label' => $this->l('No'),),
-            ),
-            'desc' => $this->l('Check to log messages from Payson Checkout 2.0'),
-        );
-        
+    public function getFormHelper()
+    {
         $helper = new HelperForm();
         $helper->show_toolbar = false;
         $helper->table = $this->table;
@@ -520,8 +585,6 @@ class PaysonCheckout2 extends PaymentModule
         } else {
             $helper->allow_employee_form_lang = 0;
         }
-
-        $helper->submit_action = 'btnSettingsSubmit';
         $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false) .
                 '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
@@ -531,7 +594,7 @@ class PaysonCheckout2 extends PaymentModule
             'id_language' => $this->context->language->id,
         );
 
-        return $helper->generateForm($fields_form);
+        return $helper;
     }
 
     // Get values for module configuration
@@ -555,6 +618,8 @@ class PaysonCheckout2 extends PaymentModule
             'PAYSONCHECKOUT2_SHOW_TERMS' => Tools::getValue('PAYSONCHECKOUT2_SHOW_TERMS', Configuration::get('PAYSONCHECKOUT2_SHOW_TERMS')),
             'PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS' => Tools::getValue('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS', Configuration::get('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS')),
             'PAYSONCHECKOUT2_NEWSLETTER' => Tools::getValue('PAYSONCHECKOUT2_NEWSLETTER', Configuration::get('PAYSONCHECKOUT2_NEWSLETTER')),
+            'PAYSONCHECKOUT2_CUSTOM_CSS' => Tools::getValue('PAYSONCHECKOUT2_CUSTOM_CSS', Configuration::get('PAYSONCHECKOUT2_CUSTOM_CSS')),
+            'PAYSONCHECKOUT2_USE_CUSTOM_CSS' => Tools::getValue('PAYSONCHECKOUT2_USE_CUSTOM_CSS', Configuration::get('PAYSONCHECKOUT2_USE_CUSTOM_CSS')),
         );
     }
 
@@ -717,17 +782,17 @@ class PaysonCheckout2 extends PaymentModule
 
         $paysonGui = array(
             'colorScheme' => Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME'),
-            'locale' => $this->languagePayson(Language::getIsoById($id_lang)), 
+            'locale' => $this->languagePayson(Language::getIsoById($id_lang)),
             'verification' => Configuration::get('PAYSONCHECKOUT2_VERIFICATION'),
             'countries' => $allowedDeliveryCountries,
             'phoneOptional' => null,
         );
         switch (Configuration::get('PAYSONCHECKOUT2_PHONE')) {
             case 'required':
-               $paysonGui['requestPhone'] = 1;
+                $paysonGui['requestPhone'] = 1;
                 break;
             case 'optional':
-               $paysonGui['phoneOptional'] = 1;
+                $paysonGui['phoneOptional'] = 1;
                 break;
             default:
                 $paysonGui['requestPhone'] = 0;
@@ -745,11 +810,11 @@ class PaysonCheckout2 extends PaymentModule
                 'email' => 'test@noreelemail.com',
                 'phone' => 1111111,
                 'identityNumber' => '4605092222',
-                'city' => 'Stan', 
+                'city' => 'Stan',
                 'countryCode' => 'SE',
                 'postalCode' => '99999',
                 'street' => '',
-                'type' => 'person', 
+                'type' => 'person',
             );
         } else {
             // Prefill if customer is logged in
@@ -759,11 +824,11 @@ class PaysonCheckout2 extends PaymentModule
                 'email' => isset($customer->email) ? $customer->email : '',
                 'phone' => isset($address->phone) ? $address->phone : '',
                 'identityNumber' => '',
-                'city' => isset($address->city) ? $address->city : '', 
+                'city' => isset($address->city) ? $address->city : '',
                 'countryCode' => isset($address->id_country) ? Country::getIsoById($address->id_country) : '',
                 'postalCode' => isset($address->postcode) ? $address->postcode : '',
                 'street' => isset($address->address1) ? $address->address1 : '',
-                'type' => 'person', 
+                'type' => 'person',
             );
         }
         return array('merchant' => $paysonMerchant, 'order' => $paysonOrder, 'gui' => $paysonGui, 'customer' => $paysonCustomer);
@@ -1151,10 +1216,10 @@ class PaysonCheckout2 extends PaymentModule
             $product_price = Tools::ps_round($cartProduct['price_wt'], $cur * _PS_PRICE_DISPLAY_PRECISION_);
             $attributes_small = isset($cartProduct['attributes_small']) ? $cartProduct['attributes_small'] : '';
             $orderitemslist[] = array(
-                'name' => $cartProduct['name'] . ' ' . $attributes_small, 
-                'unitPrice' => $product_price, 
-                'quantity' => $cartProduct['cart_quantity'], 
-                'taxrate' => number_format($my_taxrate, 3, '.', ''), 
+                'name' => $cartProduct['name'] . ' ' . $attributes_small,
+                'unitPrice' => $product_price,
+                'quantity' => $cartProduct['cart_quantity'],
+                'taxrate' => number_format($my_taxrate, 3, '.', ''),
                 'reference' => $cartProduct['id_product']
             );
         }
@@ -1176,10 +1241,10 @@ class PaysonCheckout2 extends PaymentModule
                 $shippingToSubtractFromDiscount = $total_shipping_wt;
             } else {
                 $orderitemslist[] = array(
-                    'name' => isset($carrier->name) ? $carrier->name : $this->l('Shipping'), 
-                    'unitPrice' =>  $total_shipping_wt, 
-                    'quantity' => 1, 
-                    'taxrate' => number_format($carriertax_rate, 2, '.', ''), 
+                    'name' => isset($carrier->name) ? $carrier->name : $this->l('Shipping'),
+                    'unitPrice' =>  $total_shipping_wt,
+                    'quantity' => 1,
+                    'taxrate' => number_format($carriertax_rate, 2, '.', ''),
                     'reference' => $this->l('Shipping'),
                     'type' => 'SERVICE',
                 );
@@ -1211,10 +1276,10 @@ class PaysonCheckout2 extends PaymentModule
             }
             
             $orderitemslist[] = array(
-                    'name' => $cart_rule["name"], 
-                    'unitPrice' => -(Tools::ps_round(($value_real - $shippingToSubtractFromDiscount), $cur * _PS_PRICE_DISPLAY_PRECISION_)), 
-                    'quantity' => 1, 
-                    'taxrate' => number_format(($discount_tax_rate * 0.01), 4, '.', ''), 
+                    'name' => $cart_rule["name"],
+                    'unitPrice' => -(Tools::ps_round(($value_real - $shippingToSubtractFromDiscount), $cur * _PS_PRICE_DISPLAY_PRECISION_)),
+                    'quantity' => 1,
+                    'taxrate' => number_format(($discount_tax_rate * 0.01), 4, '.', ''),
                     'reference' => $this->l('Discount'),
                     'type' => 'DISCOUNT',
                 );
@@ -1225,10 +1290,10 @@ class PaysonCheckout2 extends PaymentModule
         if ($cart->gift) {
             $wrappingTemp = number_format(Tools::convertPrice((float) $cart->getGiftWrappingPrice(false), Currency::getCurrencyInstance((int) $cart->id_currency)), Configuration::get('PS_PRICE_DISPLAY_PRECISION'), '.', '') * number_format((((($cart->getOrderTotal(true, Cart::ONLY_WRAPPING) * 100) / $cart->getOrderTotal(false, Cart::ONLY_WRAPPING))) / 100), 2, '.', '');
             $orderitemslist[] = array(
-                    'name' => $this->l('Gift Wrapping'), 
-                    'unitPrice' => $wrappingTemp, 
-                    'quantity' => 1, 
-                    'taxrate' => number_format((((($cart->getOrderTotal(true, Cart::ONLY_WRAPPING) * 100) / $cart->getOrderTotal(false, Cart::ONLY_WRAPPING)) - 100) / 100), 2, '.', ''), 
+                    'name' => $this->l('Gift Wrapping'),
+                    'unitPrice' => $wrappingTemp,
+                    'quantity' => 1,
+                    'taxrate' => number_format((((($cart->getOrderTotal(true, Cart::ONLY_WRAPPING) * 100) / $cart->getOrderTotal(false, Cart::ONLY_WRAPPING)) - 100) / 100), 2, '.', ''),
                     'reference' => 'wrapping',
                     'type' => 'SERVICE',
                 );

@@ -1,6 +1,6 @@
 <?php
 /**
- * 2018 Payson AB
+ * 2019 Payson AB
  *
  * NOTICE OF LICENSE
  *
@@ -10,7 +10,7 @@
  * http://opensource.org/licenses/afl-3.0.php
  *
  *  @author    Payson AB <integration@payson.se>
- *  @copyright 2018 Payson AB
+ *  @copyright 2019 Payson AB
  *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
@@ -255,6 +255,9 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
             // Replace checkout snippet with error message
             $this->context->smarty->assign('payson_checkout', $this->otherPayMethodLink() . '<p class="warning">' . $ex->getMessage() . '</p>');
 
+            // Delete checkout id cookie, force a new checkout
+            $this->context->cookie->__set('paysonCheckoutId', null);
+
             // If AJAX return error message
             if (Tools::getIsset('pco_update')) {
                 die($this->otherPayMethodLink() . '<p class="warning">' . $ex->getMessage() . '</p>');
@@ -265,7 +268,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
         }
     }
 
-    public function otherPayMethodLink() 
+    public function otherPayMethodLink()
     {
         if (Configuration::get('PAYSONCHECKOUT2_ONE_PAGE') == 1 && (int) Configuration::get('PS_ORDER_PROCESS_TYPE') == 1 && Configuration::get('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS') == 1) {
             return '<p class="other-payment-methods-link cart_navigation clearfix"><a class="button-exclusive btn btn-default" href="' . $this->context->link->getPageLink('order-opc?disopc=1') . '"><i class="icon-chevron-left"></i>' . $this->module->l('Other payment options', 'pconepage') . '</a></p>';
