@@ -1383,7 +1383,7 @@ class PaysonCheckout2 extends PaymentModule
                                 $this->updatePaysonOrderEvent($updatedCheckout, $order->id_cart);
                                 PaysonCheckout2::paysonAddLog('Updated Payson order status is: ' . $updatedCheckout['status']);
                             } catch (Exception $e) {
-                                $this->adminDisplayWarning($this->l('Failed to send updated order stauts to Payson. Please log in to your PaysonAccount to manually edit order.'));
+                                $this->adminDisplayWarning($this->l('Failed to send updated order status to Payson. Please log in to your PaysonAccount to manually edit order.'));
                                 Logger::addLog('Order update fail: ' . $e->getMessage(), 3, null, null, null, true);
                             }
                         } else {
@@ -1393,10 +1393,17 @@ class PaysonCheckout2 extends PaymentModule
                     }
                     
                     if ($newOrderStatus->id == Configuration::get('PAYSON_ORDER_CREDITED_STATE', null, null, $order->id_shop)) {
-                        if ($checkout['status'] == 'shipped' || $checkout['status'] == 'paidToAccount') {
+                        if ($checkout['status'] == 'readyToShip' || $checkout['status'] == 'shipped' || $checkout['status'] == 'paidToAccount') {
                             try {
                                 PaysonCheckout2::paysonAddLog('Updating Payson order status to credited.');
 
+                                // Need to ship before refund
+                                if ($checkout['status'] == 'readyToShip') {
+                                    PaysonCheckout2::paysonAddLog('Updating Payson order status to shipped before refunding.');
+                                    $checkout['status'] = 'shipped';
+                                    $checkout = $checkoutClient->update($checkout);
+                                }
+                                
                                 foreach ($checkout['order']['items'] as &$item) {
                                     $item['creditedAmount'] = ($item['unitPrice']*$item['quantity']);
                                 }
