@@ -13,7 +13,6 @@
  *  @copyright 2019 Payson AB
  *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
-
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -21,13 +20,12 @@ if (!defined('_PS_VERSION_')) {
 class PaysonCheckout2 extends PaymentModule
 {
     public $moduleVersion;
-    public $illNameChars;
 
     public function __construct()
     {
         $this->name = 'paysoncheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '2.0.17';
+        $this->version = '2.0.18';
         $this->ps_versions_compliancy = array('min' => '1.6.0.14', 'max' => _PS_VERSION_);
         $this->author = 'Payson AB';
         $this->module_key = '4015ee54469de01eaa9150b76054547e';
@@ -37,7 +35,7 @@ class PaysonCheckout2 extends PaymentModule
         $this->bootstrap = true;
         parent::__construct();
 
-        $this->displayName = $this->l('Payson Checkout 2.0');
+        $this->displayName = $this->l('Payson Checkout');
         $this->description = $this->l('Offer secure payments with Payson. Customers can pay by invoice, partial payments, card or internet bank');
 
         $this->moduleVersion = sprintf('CO2_PrestaShop_1.6|%s|%s', $this->version, _PS_VERSION_);
@@ -49,13 +47,15 @@ class PaysonCheckout2 extends PaymentModule
         if (!defined('_PCO_LOG_')) {
             define('_PCO_LOG_', Configuration::get('PAYSONCHECKOUT2_LOG'));
         }
-        
-        $this->illNameChars = array('?', '#', '!', '=', '&', '{', '}', '[', ']', '{', '}', '(', ')', ':', ',', ';', '+', '"', "'", "¤", '1', '2', '3', '4', '5', '6', '7', '8', '9', '0');
     }
 
     public function install()
     {
-        if (parent::install() == false || !$this->registerHook('payment') || !$this->registerHook('paymentReturn') || !$this->registerHook('header') || !$this->registerHook('actionOrderStatusUpdate')
+        if (parent::install() == false ||
+            !$this->registerHook('payment') ||
+            !$this->registerHook('paymentReturn') ||
+            !$this->registerHook('header') ||
+            !$this->registerHook('actionOrderStatusUpdate')											   
         ) {
             return false;
         }
@@ -68,14 +68,17 @@ class PaysonCheckout2 extends PaymentModule
         Configuration::updateValue('PAYSONCHECKOUT2_TEMPLATE', 'one_page_l');
         Configuration::updateValue('PAYSONCHECKOUT2_SHOW_CONFIRMATION', 1);
         Configuration::updateValue('PAYSONCHECKOUT2_SHOW_TERMS', 0);
-        Configuration::updateValue('PAYSONCHECKOUT2_NEWSLETTER', 0);
+        Configuration::updateValue('PAYSONCHECKOUT2_NEWSLETTER', 0);																																																							
         Configuration::updateValue('PAYSONCHECKOUT2_USE_CUSTOM_CSS', 0);
         Configuration::updateValue('PAYSONCHECKOUT2_CUSTOM_CSS', '.module-paysoncheckout2-pconepage .page-heading{color:red;}');
-
+        Configuration::updateValue('PAYSONCHECKOUT2_CUSTOMER_COUNTRY', 'auto');
+        Configuration::updateValue('PAYSONCHECKOUT2_STOCK_VALIDATION', 1);
+        Configuration::updateValue('PAYSONCHECKOUT2_SELLER_REF', 'order_id');
+        Configuration::updateValue('PAYSONCHECKOUT2_CUSTOMER_TYPE', 'individual');
         $this->createPaysonOrderTable();
 
         $orderStates = OrderState::getOrderStates(Configuration::get('PS_LANG_DEFAULT'));
-        $name = $this->l('Betald med Payson Checkout 2.0');
+        $name = $this->l('Betald med Payson Checkout');
         $config_name = 'PAYSONCHECKOUT2_ORDER_STATE_PAID';
         $this->createPaysonOrderStates($name, $orderStates, $config_name, true);
 
@@ -104,7 +107,11 @@ class PaysonCheckout2 extends PaymentModule
                 Configuration::deleteByName('PAYSONCHECKOUT2_SHOW_TERMS') == false ||
                 Configuration::deleteByName('PAYSONCHECKOUT2_NEWSLETTER') == false ||
                 Configuration::deleteByName('PAYSONCHECKOUT2_CUSTOM_CSS') == false ||
-                Configuration::deleteByName('PAYSONCHECKOUT2_USE_CUSTOM_CSS') == false
+                Configuration::deleteByName('PAYSONCHECKOUT2_USE_CUSTOM_CSS') == false ||
+                Configuration::deleteByName('PAYSONCHECKOUT2_CUSTOMER_COUNTRY') == false ||
+                Configuration::deleteByName('PAYSONCHECKOUT2_STOCK_VALIDATION') == false ||
+                Configuration::deleteByName('PAYSONCHECKOUT2_SELLER_REF') == false ||
+                Configuration::deleteByName('PAYSONCHECKOUT2_CUSTOMER_TYPE') == false																 
                 
         ) {
             return false;
@@ -224,6 +231,10 @@ class PaysonCheckout2 extends PaymentModule
             Configuration::updateValue('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS', Tools::getValue('PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS'));
             Configuration::updateValue('PAYSONCHECKOUT2_NEWSLETTER', (int) Tools::getValue('PAYSONCHECKOUT2_NEWSLETTER'));
             Configuration::updateValue('PAYSONCHECKOUT2_SHOW_TERMS', (int) Tools::getValue('PAYSONCHECKOUT2_SHOW_TERMS'));
+            Configuration::updateValue('PAYSONCHECKOUT2_CUSTOMER_COUNTRY', Tools::getValue('PAYSONCHECKOUT2_CUSTOMER_COUNTRY'));
+            Configuration::updateValue('PAYSONCHECKOUT2_STOCK_VALIDATION', Tools::getValue('PAYSONCHECKOUT2_STOCK_VALIDATION'));
+            Configuration::updateValue('PAYSONCHECKOUT2_SELLER_REF', Tools::getValue('PAYSONCHECKOUT2_SELLER_REF'));
+            Configuration::updateValue('PAYSONCHECKOUT2_CUSTOMER_TYPE', Tools::getValue('PAYSONCHECKOUT2_CUSTOMER_TYPE'));
             $saved = true;
         }
 
@@ -298,7 +309,6 @@ class PaysonCheckout2 extends PaymentModule
     {
         $orderStates = OrderState::getOrderStates((int) $this->context->cookie->id_lang);
         array_unshift($orderStates, array('id_order_state' => '-1', 'name' => $this->l('Deactivated')));
-        
         $fields_form = array();
         $fields_form[0]['form'] = array(
             'legend' => array(
@@ -383,6 +393,26 @@ class PaysonCheckout2 extends PaymentModule
                         'name' => 'name',
                     ),
                 ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Seller reference'),
+                    'name' => 'PAYSONCHECKOUT2_SELLER_REF',
+                    'desc' => $this->l('Seller reference to send to Payson.'),
+                    'options' => array(
+                        'query' => array(
+                            array(
+                                'value' => 'order_id',
+                                'label' => $this->l('Order ID'),
+                            ),
+                            array(
+                                'value' => 'order_ref',
+                                'label' => $this->l('Order reference'),
+                            ),
+                        ),
+                        'id' => 'value',
+                        'name' => 'label',
+                    ),
+                )
             )
         );
 
@@ -442,6 +472,28 @@ class PaysonCheckout2 extends PaymentModule
                         'name' => 'name',
                     ),
                 ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Customer country'),
+                    'name' => 'PAYSONCHECKOUT2_CUSTOMER_COUNTRY',
+                    'desc' => $this->l('Default customer country'),
+                    'options' => array(
+                        'query' => array(array('id_option' => 'auto', 'name' => $this->l('Default')), array('id_option' => 'assume', 'name' => $this->l('Country based on language'))),
+                        'id' => 'id_option',
+                        'name' => 'name',
+                    ),
+                ),
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('Customer type'),
+                    'name' => 'PAYSONCHECKOUT2_CUSTOMER_TYPE',
+                    'desc' => $this->l('Default customer type'),
+                    'options' => array(
+                        'query' => array(array('id_option' => 'individual', 'name' => $this->l('Individual')), array('id_option' => 'business', 'name' => $this->l('Business'))),
+                        'id' => 'id_option',
+                        'name' => 'name',
+                    ),
+                ),		  
             )
         );
         
@@ -470,7 +522,7 @@ class PaysonCheckout2 extends PaymentModule
                     ),
                     'desc' => $this->l('Select Yes to show the payment window on the checkout page'),
                 ),
-                array(
+                array(			  
                     'type' => 'switch',
                     'label' => $this->l('Show other payment methods'),
                     'name' => 'PAYSONCHECKOUT2_SHOW_OTHER_PAYMENTS',
@@ -532,6 +584,34 @@ class PaysonCheckout2 extends PaymentModule
         
         $fields_form[4]['form'] = array(
             'legend' => array(
+                'title' => $this->l('Additional stock validation'),
+                'icon' => '',
+            ),
+            'input' => array(
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Stock validation'),
+                    'name' => 'PAYSONCHECKOUT2_STOCK_VALIDATION',
+                    'is_bool' => true,
+                    'values' => array(
+                        array(
+                            'id' => 'stock_val_on',
+                            'value' => 1,
+                            'label' => $this->l('Yes'),
+                        ),
+                        array(
+                            'id' => 'stock_val_off',
+                            'value' => 0,
+                            'label' => $this->l('No'),
+                        ),
+                    ),
+                    'desc' => $this->l('Perform additional stock validation'),
+                )
+            )
+        );
+		
+        $fields_form[5]['form'] = array(
+            'legend' => array(		  
                 'title' => $this->l('Log'),
                 'icon' => '',
             ),
@@ -553,12 +633,12 @@ class PaysonCheckout2 extends PaymentModule
                             'label' => $this->l('No'),
                         ),
                     ),
-                    'desc' => $this->l('Check to log messages from Payson Checkout 2.0'),
+                    'desc' => $this->l('Check to log messages from Payson Checkout'),
                 )
             )
         );
         
-        $fields_form[5]['form'] = array(
+        $fields_form[6]['form'] = array(
             'legend' => array(
                 'title' => $this->l('Save changes'),
                 'icon' => '',
@@ -620,6 +700,10 @@ class PaysonCheckout2 extends PaymentModule
             'PAYSONCHECKOUT2_NEWSLETTER' => Tools::getValue('PAYSONCHECKOUT2_NEWSLETTER', Configuration::get('PAYSONCHECKOUT2_NEWSLETTER')),
             'PAYSONCHECKOUT2_CUSTOM_CSS' => Tools::getValue('PAYSONCHECKOUT2_CUSTOM_CSS', Configuration::get('PAYSONCHECKOUT2_CUSTOM_CSS')),
             'PAYSONCHECKOUT2_USE_CUSTOM_CSS' => Tools::getValue('PAYSONCHECKOUT2_USE_CUSTOM_CSS', Configuration::get('PAYSONCHECKOUT2_USE_CUSTOM_CSS')),
+            'PAYSONCHECKOUT2_CUSTOMER_COUNTRY' => Tools::getValue('PAYSONCHECKOUT2_CUSTOMER_COUNTRY', Configuration::get('PAYSONCHECKOUT2_CUSTOMER_COUNTRY')),
+            'PAYSONCHECKOUT2_STOCK_VALIDATION' => Tools::getValue('PAYSONCHECKOUT2_STOCK_VALIDATION', Configuration::get('PAYSONCHECKOUT2_STOCK_VALIDATION')),
+            'PAYSONCHECKOUT2_SELLER_REF' => Tools::getValue('PAYSONCHECKOUT2_SELLER_REF', Configuration::get('PAYSONCHECKOUT2_SELLER_REF')),
+            'PAYSONCHECKOUT2_CUSTOMER_TYPE' => Tools::getValue('PAYSONCHECKOUT2_CUSTOMER_TYPE', Configuration::get('PAYSONCHECKOUT2_CUSTOMER_TYPE')),
         );
     }
 
@@ -724,6 +808,31 @@ class PaysonCheckout2 extends PaymentModule
         return false;
     }
 
+	public function validDeliveryCountries()
+    {
+        //$deliveryCountries = Carrier::getDeliveredCountries($this->context->language->id, true, true);
+        $activeCountries = Country::getCountries($this->context->language->id, true, false, false);
+        $moduleCountries = $this->getModuleAllowedCountries((int) $this->getPaysonModuleID(), (int) $this->context->shop->id);
+        PaysonCheckout2::paysonAddLog('Language ID: ' . $this->context->language->id);
+        PaysonCheckout2::paysonAddLog('Active countries: ' . print_r($activeCountries, true));
+        PaysonCheckout2::paysonAddLog('Module countries: ' . print_r($moduleCountries, true));
+        $allowedDeliveryCountries = array();
+        foreach ($activeCountries as $country) {
+            if (in_array($country['iso_code'], $moduleCountries)) {
+                $allowedDeliveryCountries[] = $country['iso_code'];
+            }
+        }
+        
+        if (!is_array($allowedDeliveryCountries) || count($allowedDeliveryCountries) < 1) {
+            // null will show all countries
+            $allowedDeliveryCountries = null;
+        }
+        
+        PaysonCheckout2::paysonAddLog('Valid countries: ' . print_r($allowedDeliveryCountries, true));
+        
+        return $allowedDeliveryCountries;
+    }
+    
     public function createPaysonCheckout($customer, $cart, $payson, $currency, $id_lang, $address)
     {
         $trackingId = time();
@@ -759,32 +868,11 @@ class PaysonCheckout2 extends PaymentModule
         
         PaysonCheckout2::paysonAddLog('PCO Order: ' . print_r($paysonOrder, true), 1, null, null, null, true);
 
-        //$deliveryCountries = Carrier::getDeliveredCountries($this->context->language->id, true, true);
-        $activeCountries = Country::getCountries($this->context->language->id, true, false, false);
-        $moduleCountries = $this->getModuleAllowedCountries((int) $this->getPaysonModuleID(), (int) $this->context->shop->id);
-
-        PaysonCheckout2::paysonAddLog('Language ID: ' . $this->context->language->id, 1, null, null, null, true);
-        PaysonCheckout2::paysonAddLog('Active countries: ' . print_r($activeCountries, true), 1, null, null, null, true);
-        PaysonCheckout2::paysonAddLog('Module countries: ' . print_r($moduleCountries, true), 1, null, null, null, true);
-
-        $allowedDeliveryCountries = array();
-        foreach ($activeCountries as $country) {
-            if (in_array($country['iso_code'], $moduleCountries)) {
-                $allowedDeliveryCountries[] = $country['iso_code'];
-            }
-        }
-        PaysonCheckout2::paysonAddLog('Valid countries: ' . print_r($allowedDeliveryCountries, true), 1, null, null, null, true);
-
-        if (!is_array($allowedDeliveryCountries) || count($allowedDeliveryCountries) < 1) {
-            // null will show all countries
-            $allowedDeliveryCountries = null;
-        }
-
         $paysonGui = array(
             'colorScheme' => Configuration::get('PAYSONCHECKOUT2_COLOR_SCHEME'),
             'locale' => $this->languagePayson(Language::getIsoById($id_lang)),
             'verification' => Configuration::get('PAYSONCHECKOUT2_VERIFICATION'),
-            'countries' => $allowedDeliveryCountries,
+            'countries' => $this->validDeliveryCountries(),
             'phoneOptional' => null,
         );
         switch (Configuration::get('PAYSONCHECKOUT2_PHONE')) {
@@ -802,35 +890,30 @@ class PaysonCheckout2 extends PaymentModule
 
         PaysonCheckout2::paysonAddLog('PCO GUI: ' . print_r($paysonGui, true), 1, null, null, null, true);
 
-        if (Configuration::get('PAYSONCHECKOUT2_MODE') == 1) {
-            // Create test customer
-            $paysonCustomer = array(
-                'firstName' => 'Tess T',
-                'lastName' => 'Persson',
-                'email' => 'test@noreelemail.com',
-                'phone' => 1111111,
-                'identityNumber' => '4605092222',
-                'city' => 'Stan',
-                'countryCode' => 'SE',
-                'postalCode' => '99999',
-                'street' => '',
-                'type' => 'person',
-            );
-        } else {
-            // Prefill if customer is logged in
-            $paysonCustomer = array(
-                'firstName' => isset($customer->firstname) ? $customer->firstname : '',
-                'lastName' => isset($customer->lastname) ? $customer->lastname : '',
-                'email' => isset($customer->email) ? $customer->email : '',
-                'phone' => isset($address->phone) ? $address->phone : '',
-                'identityNumber' => '',
-                'city' => isset($address->city) ? $address->city : '',
-                'countryCode' => isset($address->id_country) ? Country::getIsoById($address->id_country) : '',
-                'postalCode' => isset($address->postcode) ? $address->postcode : '',
-                'street' => isset($address->address1) ? $address->address1 : '',
-                'type' => 'person',
-            );
+        $mode = Configuration::get('PAYSONCHECKOUT2_MODE');
+		
+        $identityNumber = ((!empty($address->dni)) ? $address->dni : (($mode == 1) ? '4605092222' : ''));
+        if (Configuration::get('PAYSONCHECKOUT2_CUSTOMER_TYPE') == 'business') {
+            $identityNumber = ((!empty($customer->siret)) ? $customer->siret : (($mode == 1) ? '4608142222' : ''));
         }
+        
+        PaysonCheckout2::paysonAddLog('PS Addres: ' . print_r($address, true));
+        PaysonCheckout2::paysonAddLog('PS Addres First Name: ' . print_r($address->firstname, true));
+        
+        $paysonCustomer = array(
+            'firstName' => ((!empty($address->firstname)) ? $address->firstname : (($mode == 1) ? 'Nisse' : '')),
+            'lastName' => ((!empty($address->lastname)) ? $address->lastname : (($mode == 1) ? 'Person' : '')),
+            'email' => ((!empty($customer->email)) ? $customer->email : (($mode == 1) ? 'test@anyemail.nu' : '')),
+            'phone' => ((!empty($address->phone)) ? $address->phone : (($mode == 1) ? '0701234589' : '')),
+            'identityNumber' => $identityNumber,
+            'city' => ((!empty($address->city)) ? $address->city : (($mode == 1) ? 'Stockholm' : '')),
+            'countryCode' => isset($address->id_country) ? Country::getIsoById($address->id_country) : $this->countryBasedOnLanguage(Language::getIsoById($id_lang)),
+            'postalCode' => ((!empty($address->postcode)) ? $address->postcode : (($mode == 1) ? '999 99' : '')),
+            'street' => ((!empty($address->address1)) ? $address->address1 : (($mode == 1) ? 'Testgatan 1' : '')),
+            'type' => Configuration::get('PAYSONCHECKOUT2_CUSTOMER_TYPE') == 'business' ? 'business' : 'person',
+        );
+       
+        PaysonCheckout2::paysonAddLog('PCO Customer: ' . print_r($paysonCustomer, true));
         return array('merchant' => $paysonMerchant, 'order' => $paysonOrder, 'gui' => $paysonGui, 'customer' => $paysonCustomer);
     }
 
@@ -873,8 +956,8 @@ class PaysonCheckout2 extends PaymentModule
     public function updatePaysonCheckout($checkout, $customer, $cart, $payson, $address, $currency)
     {
         if ($customer->email != null && $checkout['status'] != 'readyToPay') {
-            $checkout['customer']['firstName'] = $customer->firstname;
-            $checkout['customer']['lastName'] = $customer->lastname;
+            $checkout['customer']['firstName'] = $address->firstname;
+            $checkout['customer']['lastName'] = $address->lastname;
             $checkout['customer']['email'] = $customer->email;
             $checkout['customer']['phone'] = $address->phone;
             $checkout['customer']['city'] = $address->city;
@@ -914,13 +997,19 @@ class PaysonCheckout2 extends PaymentModule
             if ($cart->OrderExists() == false) {
                 $currency = new Currency($cart->id_currency);
 
-                // Add or load customer
-                if ((int) Customer::customerExists($checkout['customer']['email'], true, true) > 0) {
-                    $customer = new Customer(Customer::customerExists($checkout['customer']['email'], true, true));
+                // Load, add or update customer
+                if ($this->context->customer->isLogged() || $this->context->customer->is_guest) {
+                    PaysonCheckout2::paysonAddLog('createOrderPS() - customer is logged in.');
+                    $customer = new Customer((int) ($this->context->cart->id_customer));
                 } else {
-                    $customer = $this->addPaysonCustomerPS($cart->id, $checkout);
+                    if ((int) Customer::customerExists($checkout['customer']['email'], true, true) > 0) {
+                        PaysonCheckout2::paysonAddLog('createOrderPS() - load existing customer.');
+                        $customer = new Customer((int) Customer::customerExists($checkout['customer']['email'], true, true));
+                    } else {
+                        $customer = $this->addPaysonCustomerPS($cart->id, $checkout);
+                    }
                 }
-
+				
                 // Update or create address
                 $address = $this->updateCreatePsAddress(Country::getByIso($checkout['customer']['countryCode']), $checkout, $customer->id);
                 
@@ -958,6 +1047,11 @@ class PaysonCheckout2 extends PaymentModule
                 $order = new Order((int) $orderId);
                 $this->setTransactionId($order->reference, $checkout['purchaseId']);
 
+                // Set address id:s on order to match cart
+                $order->id_address_invoice = $cart->id_address_invoice;
+                $order->id_address_delivery = $cart->id_address_delivery;
+                $order->save();
+                
                 return $orderId;
             } else {
                 PaysonCheckout2::paysonAddLog('PS order already exits.', 2, null, null, null, true);
@@ -1091,6 +1185,39 @@ class PaysonCheckout2 extends PaymentModule
         }
     }
     
+    public function countryBasedOnLanguage($language)
+    {
+        if (Configuration::get('PAYSONCHECKOUT2_CUSTOMER_COUNTRY') == 'assume') {
+            switch (Tools::strtoupper($language)) {
+                case 'SE':
+                case 'SV':
+                    return 'SE';
+                case 'FI':
+                    return 'FI';
+                case 'DA':
+                case 'DK':
+                    return 'DK';
+                case 'NO':
+                case 'NB':
+                    return 'NO';
+                case 'CA':
+                case 'GL':
+                case 'EU':
+                case 'ES':
+                    return 'ES';
+                case 'DE':
+                    return 'DE';
+                case 'EN':
+                case 'GB':
+                    return 'GB';
+                default:
+                    return '';
+            }
+        } else {
+            return '';
+        }
+    }
+	
     public function validPaysonCurrency($currency)
     {
         switch (Tools::strtoupper($currency)) {
@@ -1124,6 +1251,15 @@ class PaysonCheckout2 extends PaymentModule
         return \Payson\Payments\Transport\Connector::init($agentId, $apiKey, $apiUrl);
     }
 
+    /* 
+     * @return cleaned and trimmed string
+    */
+    public function cts($str = '', $len = 31)
+    {
+        $illNameChars = array('?', '#', '!', '=', '&', '{', '}', '[', ']', '{', '}', '(', ')', ':', ',', ';', '+', '"', "'", '¤', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0');
+        return str_replace($illNameChars, array(' '), Tools::strlen($str) > $len ? Tools::substr($str, 0, $len) : $str);
+    } 
+	
     public function addPaysonCustomerPS($cartId, $checkout)
     {
         PaysonCheckout2::paysonAddLog('Create PS Customer - Checkout customer: ' . print_r($checkout['customer'], true));
@@ -1132,14 +1268,24 @@ class PaysonCheckout2 extends PaymentModule
 
         $customer = new Customer();
         
-        $firstName = str_replace($this->illNameChars, array(' '), (Tools::strlen($checkout['customer']['firstName']) > 31 ? Tools::substr($checkout['customer']['firstName'], 0, 31) : $checkout['customer']['firstName']));
-        // $checkout->customer->lastName is null if customer is business
-        $lastName = $checkout['customer']['lastName'] != null ? str_replace($this->illNameChars, array(' '), (Tools::strlen($checkout['customer']['lastName']) > 31 ? Tools::substr($checkout['customer']['lastName'], 0, 31) : $checkout['customer']['lastName'])) : $firstName;
+        $firstName = $this->cts($checkout['customer']['firstName']);																	
+        $lastName = $this->cts($checkout['customer']['lastName']);
         
-        $customer->firstname = $firstName;
-        $customer->lastname = $lastName;
+        if ($checkout['customer']['type'] == 'business') {
+            $lastName = '-';
+            if ($this->context->customer->isLogged() || $this->context->customer->is_guest) {
+                $customer = new Customer((int) ($this->context->cart->id_customer));
+                $firstName = $customer->firstname;
+                $lastName = $customer->lastname;
+            }
+            PaysonCheckout2::paysonAddLog('identityNumber: ' . print_r($checkout['customer']['identityNumber'], true));
+            //$customer->siret = !empty($checkout['customer']['identityNumber']) ? $checkout['customer']['identityNumber'] : '';
+            $customer->company = $firstName;
+        }
         
         $password = Tools::passwdGen(8);
+        $customer->firstname = $firstName;
+        $customer->lastname = $lastName;
         $customer->is_guest = 0;
         $customer->passwd = Tools::encrypt($password);
         $customer->id_default_group = (int) (Configuration::get('PS_CUSTOMER_GROUP', null, $cart->id_shop));
@@ -1156,40 +1302,63 @@ class PaysonCheckout2 extends PaymentModule
 
     public function updateCreatePsAddress($countryId, $checkout, $customerId)
     {
-        PaysonCheckout2::paysonAddLog('Update or Create PS Address - Checkout customer: ' . print_r($checkout['customer'], true));
-        PaysonCheckout2::paysonAddLog('Customer ID: ' . print_r($customerId, true));
-        PaysonCheckout2::paysonAddLog('Address ID: ' . print_r(Address::getFirstCustomerAddressId((int) $customerId), true));
+        PaysonCheckout2::paysonAddLog('updateCreatePsAddress() - Checkout customer: ' . print_r($checkout['customer'], true));
+	
+        $customer = new Customer((int) $customerId);
+        PaysonCheckout2::paysonAddLog('Customer ID: ' . print_r($customer, true));
         
         $newAddress = false;
         if ((int) Address::getFirstCustomerAddressId((int) $customerId) < 1) {
             $address = new Address();
             $newAddress = true;
         } else {
-            $address = new Address(Address::getFirstCustomerAddressId((int) $customerId));
+            $cart = $this->context->cart;
+            if ($cart->id_address_delivery != $cart->id_address_invoice) {
+                // Customer has separate invoice and delivery address, we use the invoice address
+                $address = new Address($cart->id_address_invoice);
+                Logger::addLog('Customer ' . $customerId . ' has a separate invoice address for cart ' . $cart->id . '. Its recommended to always use the Payson address for delivery.', 1);
+            } else {
+                $address = new Address($cart->id_address_delivery);
+            }
         }
 
-        $firstName = str_replace($this->illNameChars, array(' '), (Tools::strlen($checkout['customer']['firstName']) > 31 ? Tools::substr($checkout['customer']['firstName'], 0, 31) : $checkout['customer']['firstName']));
-        // $checkout->customer->lastName is null if customer is business
-        $lastName = $checkout['customer']['lastName'] != null ? str_replace($this->illNameChars, array(' '), (Tools::strlen($checkout['customer']['lastName']) > 31 ? Tools::substr($checkout['customer']['lastName'], 0, 31) : $checkout['customer']['lastName'])) : $firstName;
+        $firstName = $this->cts($checkout['customer']['firstName']);
+        $lastName = $this->cts($checkout['customer']['lastName']);
+        
+        if ($checkout['customer']['type'] == 'business') {
+            $address->company = $firstName;
+            $lastName = '-';
+            $customer->company = $firstName;
+            //$customer->siret = !empty($checkout['customer']['identityNumber']) ? $checkout['customer']['identityNumber'] : null;
+            $customer->update();
+            if ($newAddress == true) {
+                if ($this->context->customer->isLogged() || $this->context->customer->is_guest) {
+                    $firstName = $customer->firstname;
+                    $lastName = $customer->lastname;
+                }
+            } else {
+                $firstName = $address->firstname;
+                $lastName = $address->lastname;
+            }
+        }
         
         $address->firstname = $firstName;
         $address->lastname = $lastName;
-        
-        $address->address1 = $checkout['customer']['street'];
+		
+        $address->address1 = !empty($checkout['customer']['street']) ? $checkout['customer']['street'] : '';
         $address->address2 = '';
-        $address->city = $checkout['customer']['city'];
-        $address->postcode = $checkout['customer']['postalCode'];
+        $address->city = !empty($checkout['customer']['city']) ? $checkout['customer']['city'] : '';
+        $address->postcode = !empty($checkout['customer']['postalCode']) ? $checkout['customer']['postalCode'] : '';
         $address->country = Country::getNameById(Configuration::get('PS_LANG_DEFAULT'), $countryId);
+        $address->dni = !empty($checkout['customer']['identityNumber']) ? $checkout['customer']['identityNumber'] : '';
         $address->id_customer = $customerId;
         $address->id_country = $countryId;
-        $address->phone = $checkout['customer']['phone'] != null ? $checkout['customer']['phone'] : '000000';
-        $address->phone_mobile = $checkout['customer']['phone'] != null ? $checkout['customer']['phone'] : '000000';
-        //$address->id_state   = (int)$customer->id_state;
-        $address->alias = $this->l('Payson account address');
+        $address->phone = !empty($checkout['customer']['phone']) ? $checkout['customer']['phone'] : '';											  
+        $address->alias = $this->l('Payson address');
         
+        // Check address
         $validation = $address->validateController();
-
-        // Checks address
+			 
         if (count($validation) > 0) {
             foreach ($validation as $item) {
                 PaysonCheckout2::paysonAddLog($item, 3);
@@ -1198,11 +1367,11 @@ class PaysonCheckout2 extends PaymentModule
 
         if ($newAddress == false) {
             $address->update();
+            PaysonCheckout2::paysonAddLog('Updated PS Address ID ' . $address->id);
         } else {
             $address->add();
+            PaysonCheckout2::paysonAddLog('Added PS Address ID ' . $address->id);
         }
-        
-        PaysonCheckout2::paysonAddLog('Updated/Created PS Address');
         
         return $address;
     }
@@ -1373,7 +1542,7 @@ class PaysonCheckout2 extends PaymentModule
                     if ($newOrderStatus->id == Configuration::get('PAYSON_ORDER_SHIPPED_STATE', null, null, $order->id_shop)) {
                         if ($checkout['status'] == 'readyToShip') {
                             try {
-                                PaysonCheckout2::paysonAddLog('Updating Payson order ststus to shipped.', 1, null, null, null, true);
+                                PaysonCheckout2::paysonAddLog('Updating Payson order status to shipped.', 1, null, null, null, true);
                                 
                                 $checkout['status'] = 'shipped';
                                 $updatedCheckout = $checkoutClient->update($checkout);

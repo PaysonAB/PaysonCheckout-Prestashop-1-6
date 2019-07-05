@@ -166,11 +166,12 @@ $(document).ready(function() {
             if ($('#paysonIframe').length) {
                 document.getElementById('paysonIframe').contentWindow.postMessage('release', '*');
             }
-            setTimeout(function() {
+            var heightInterval = setInterval(function() {
                 if ($('#paysonpaymentwindow').length) {
                     $('#paysonpaymentwindow').height('auto');
+                    clearInterval(heightInterval);
                 }
-            }, 500);
+            }, 100);
         }
 
         function termsChecked() {
