@@ -128,7 +128,6 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
         $update_sql = 'UPDATE ' . _DB_PREFIX_ . 'cart_product ' .
                 'SET id_address_delivery=' . (int) $address->id .
                 ' WHERE id_cart=' . (int) $cart->id;
-
         Db::getInstance()->execute($update_sql);
 
         // To refresh/clear cart carrier cache
@@ -151,6 +150,11 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
         }
         $cart->save();
 
+        $update_sql = 'UPDATE ' . _DB_PREFIX_ . 'cart_product ' .
+                'SET id_address_delivery=' . (int) $cart->id_address_delivery .
+                ' WHERE id_cart=' . (int) $cart->id;
+        Db::getInstance()->execute($update_sql);
+        
         $cache_id = 'objectmodel_cart_' . $cart->id . '*';
         Cache::clean($cache_id);
         $cart = new Cart($cart->id);
