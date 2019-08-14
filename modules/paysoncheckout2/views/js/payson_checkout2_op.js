@@ -14,7 +14,7 @@
 */
 
 
-
+var reqInProcess = false;
 $(document).ready(function() {
     if (page_name === 'order-opc') {
         // Add class
@@ -112,12 +112,6 @@ $(document).ready(function() {
             sessionStorage.setItem('conditions_to_approve_checkbox', $(this).prop('checked'));
         });
 
-        // Payson address change
-        document.addEventListener('PaysonEmbeddedAddressChanged', function() {
-            sendLockDown();
-            validateOrder({validate_order: '1', id_cart: id_cart});
-        }, true);
-
         function updateCheckout(callData, updateCart, updateCheckout) {
             if ((termsRequired() && termsChecked()) || termsRequired() === false) {
                 upReq = null;
@@ -190,33 +184,43 @@ $(document).ready(function() {
             return false;
         }
 
+        // Listen for address change, split in 3 to avoid duplicate calls to validateOrder()
+        document.addEventListener('PaysonEmbeddedAddressChanged', callValidate);
+
+        function callValidate() {
+            sendLockDown();
+            document.removeEventListener('PaysonEmbeddedAddressChanged', callValidate);
+            validateOrder({validate_order: '1', id_cart: id_cart});
+            timedRebind = setTimeout(reBindEventListener, 1000);
+        }
+        
+        function reBindEventListener() {
+            document.addEventListener('PaysonEmbeddedAddressChanged', callValidate);
+        }
+
         // Validate order
         function validateOrder(callData) {
-            valReq = null;
-            valReq = $.ajax({
-                type: 'GET',
-                url: validateurl,
-                async: true,
-                cache: false,
-                data: callData,
-                beforeSend: function()
-                { 
-                    if (valReq !== null) {
-                        valReq.abort();
-                    }
-                },
-                success: function(returnData)
-                {
-                    if (returnData == 'reload') {
-                        location.href = orderOpcUrl;
-                    } else {
+            if (!reqInProcess) {
+                reqInProcess = true;
+                $.ajax({
+                    type: 'GET',
+                    url: validateurl,
+                    async: true,
+                    cache: false,
+                    data: callData,
+                    success: function(returnData) {
+                        if (returnData === 'reload') {
+                            location.href = orderOpcUrl;
+                        } else {
+                            sendRelease();
+                        }
+                    },
+                    error: function() {
                         sendRelease();
                     }
-                },
-                error: function(XMLHttpRequest, textStatus, errorThrown) {
-                    sendRelease();
-                }
-            });
+                });
+                reqInProcess = false;
+            }
         }
 
         // Init checkout

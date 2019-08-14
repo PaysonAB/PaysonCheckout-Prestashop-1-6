@@ -24,7 +24,7 @@ class PaysonCheckout2NotificationsModuleFrontController extends ModuleFrontContr
         sleep(2);
         
         PaysonCheckout2::paysonAddLog('* ' . __FILE__ . ' -> ' . __METHOD__ . ' *');
-        PaysonCheckout2::paysonAddLog('Query: ' . print_r($_REQUEST, true));
+        PaysonCheckout2::paysonAddLog('Notification Query: ' . print_r($_REQUEST, true));
 
         $call = Tools::getValue('call');
 

@@ -102,6 +102,10 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     $errMess = $this->module->l('This order does not meet the requirement for minimum order value.', 'pconepage');
                 }
                 
+                // Reset cookies
+                $this->context->cookie->__set('alreadyLoggedIn', null);
+                $this->context->cookie->__set('CreatedCustomer', null);
+                
                 // Check customer and address
                 if ($this->context->customer->isLogged() || $this->context->customer->is_guest) {
                     PaysonCheckout2::paysonAddLog($this->context->customer->is_guest == 1 ? 'Customer is: Guest' : 'Customer is: Logged in');
@@ -109,6 +113,9 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     $customer = new Customer((int) ($this->context->cart->id_customer));
                     $address = new Address((int) ($this->context->cart->id_address_invoice));
 
+                    // Set cookie to indicate that this customer was logged in before checkout
+                    $this->context->cookie->__set('alreadyLoggedIn', 1);
+                    
                     if ($address->id_state) {
                         $state = new State((int) ($address->id_state));
                     }
@@ -123,16 +130,19 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     $customer = new Customer();
                 }
                 
+                PaysonCheckout2::paysonAddLog('Refresh cart summmary');
                 // Refresh cart summary
                 $this->context->cart->getSummaryDetails();
                 $this->assignSummaryInformations();
                 
+                PaysonCheckout2::paysonAddLog('Get delivery options');
                 // Get delivery options
                 //$checkoutSession = $this->getCheckoutSession();
                 //$delivery_options = $checkoutSession->getDeliveryOptions();
                 //$delivery_options_finder_core = new DeliveryOptionsFinder($this->context, $this->getTranslator(), $this->objectPresenter, new PriceFormatter());
                 //$delivery_option = $delivery_options_finder_core->getSelectedDeliveryOption();
 
+                PaysonCheckout2::paysonAddLog('Check free shipping cart rule');
                 // Free shipping cart rule
                 $free_shipping = false;
                 foreach ($this->context->cart->getCartRules() as $rule) {
@@ -142,6 +152,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     }
                 }
 
+                PaysonCheckout2::paysonAddLog('Check free shipping based on order total');
                 // Free shipping based on order total
                 $configuration = Configuration::getMultiple(array('PS_SHIPPING_FREE_PRICE', 'PS_SHIPPING_FREE_WEIGHT'));
                 if (isset($configuration['PS_SHIPPING_FREE_PRICE']) && $configuration['PS_SHIPPING_FREE_PRICE'] > 0) {
@@ -149,8 +160,10 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     $orderTotalwithDiscounts = $this->context->cart->getOrderTotal(true, Cart::BOTH_WITHOUT_SHIPPING, null, null, false);
                     $left_to_get_free_shipping = ($free_fees_price - $orderTotalwithDiscounts);
                     $this->context->smarty->assign('left_to_get_free_shipping', $left_to_get_free_shipping);
+                    $this->context->smarty->assign('free_shipping_price_amount', $free_fees_price);
                 }
 
+                PaysonCheckout2::paysonAddLog('Check free shipping based on weight');
                 // Free shipping based on order weight
                 if (isset($configuration['PS_SHIPPING_FREE_WEIGHT']) && $configuration['PS_SHIPPING_FREE_WEIGHT'] > 0) {
                     $free_fees_weight = $configuration['PS_SHIPPING_FREE_WEIGHT'];
@@ -184,6 +197,7 @@ class PaysonCheckout2PcOnePageModuleFrontController extends ModuleFrontControlle
                     'newsletter_optin_text' => $this->module->l('Sign up for our newsletter', 'pconepage'),
                 ));
             
+                PaysonCheckout2::paysonAddLog('Check for error');
                 // Check for error and exit if any
                 if ($errMess !== false) {
                     throw new Exception($errMess);

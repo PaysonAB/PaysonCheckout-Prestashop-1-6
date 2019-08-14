@@ -97,6 +97,7 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                     Tools::redirect('order.php?step=3');
                 }									
             }
+              
             $newOrderId = false;
             $redirect = false;
 
@@ -119,7 +120,7 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                             // Set reference
                             $ref = $order->reference;
                         }
-                        $checkout['merchant']['reference'] = $newOrderId;
+                        $checkout['merchant']['reference'] = $ref;
                         $checkoutClient->update($checkout);
                         
                         PaysonCheckout2::paysonAddLog('New order ID: ' . $newOrderId);
@@ -160,7 +161,13 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
             $this->context->smarty->assign('payson_checkout', $checkout['snippet']);
             $this->context->smarty->assign('HOOK_ORDER_CONFIRMATION', Hook::exec('OrderConfirmation', array('objOrder' => $order)));
 
-            // Show confirmation
+            $customer = new Customer((int) ($order->id_customer));
+            
+            if ((isset($this->context->cookie->alreadyLoggedIn) && $this->context->cookie->alreadyLoggedIn == null)) {
+                PaysonCheckout2::paysonAddLog('Customer was not logged in before checkout.');
+                $customer->mylogout();
+            }
+            
             $this->displayConfirmation();
         } catch (Exception $ex) {
             // Log error message

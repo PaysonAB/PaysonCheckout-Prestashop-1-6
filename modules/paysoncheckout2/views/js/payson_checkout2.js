@@ -71,10 +71,18 @@ $(document).ready(function() {
             });
         }
 
-        document.addEventListener('PaysonEmbeddedAddressChanged', function() {
+        // Listen for address change, split in 3 to avoid duplicate calls to validateOrder()
+        document.addEventListener('PaysonEmbeddedAddressChanged', callValidate);
+
+        function callValidate() {
             sendLockDown();
-            var callData = {validate_order: '1', id_cart: id_cart};
-            validateOrder(callData);
-        }, true);
+            document.removeEventListener('PaysonEmbeddedAddressChanged', callValidate);
+            validateOrder({validate_order: '1', id_cart: id_cart});
+            timedRebind = setTimeout(reBindEventListener, 1000);
+        }
+        
+        function reBindEventListener() {
+            document.addEventListener('PaysonEmbeddedAddressChanged', callValidate);
+        }
     }
 });

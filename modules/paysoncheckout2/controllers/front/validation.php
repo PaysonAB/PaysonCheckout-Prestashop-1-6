@@ -87,9 +87,9 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
                 $customer->update();
             }
         } else {
-            if ((int) Customer::customerExists($checkout['customer']['email'], true, true) > 0) {
+            if ((int) Customer::customerExists($checkout['customer']['email'], true, false) > 0) {
                 PaysonCheckout2::paysonAddLog('Validation - load existing customer.');
-                $customer = new Customer((int) Customer::customerExists($checkout['customer']['email'], true, true));
+                $customer = new Customer((int) Customer::customerExists($checkout['customer']['email'], true, false));
             } else {
                 $customer = $payson->addPaysonCustomerPS($cart->id, $checkout);
             }
@@ -104,10 +104,24 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
             PaysonCheckout2::paysonAddLog('Updated customer newsletter settting.');
         }
         
+        if ($cart->id_address_delivery != $cart->id_address_invoice) {
+            // Set Payson address as invoice address only, keep delivery address
+            $cart->id_address_invoice = $address->id;
+        } else {
+            // Set Payson address as both invoice address and delivery address
+            $cart->id_address_delivery = $address->id;
+            $cart->id_address_invoice = $address->id;
+        }
+        $cart->save();
+        
+        PaysonCheckout2::paysonAddLog('$cart->id_address_delivery: ' . $cart->id_address_delivery);
+        
         $new_delivery_options = array();
-        $new_delivery_options[(int) ($address->id)] = $cart->id_carrier . ',';
+        $new_delivery_options[(int) ($cart->id_address_delivery)] = $cart->id_carrier . ',';
+        
         $new_delivery_options_serialized = serialize($new_delivery_options);
 
+        PaysonCheckout2::paysonAddLog('$new_delivery_options_serialized: ' . $new_delivery_options_serialized);
         PaysonCheckout2::paysonAddLog('Address ID: ' . $address->id);
         PaysonCheckout2::paysonAddLog('Carrier ID: ' . $cart->id_carrier);
 
@@ -126,7 +140,7 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
         }
 
         $update_sql = 'UPDATE ' . _DB_PREFIX_ . 'cart_product ' .
-                'SET id_address_delivery=' . (int) $address->id .
+                'SET id_address_delivery=' . (int) ($cart->id_address_delivery) .
                 ' WHERE id_cart=' . (int) $cart->id;
         Db::getInstance()->execute($update_sql);
 
@@ -171,8 +185,8 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
         if ($checkoutTotal !== $cartTotal) {
             /*
              * Common reason for ending up with a mismatch between checkout and cart totals is that the customer has selected 
-             * a different country in the checkout. The cart has been updated to reflect the VAT of the selected country. 
-             * Here we update the checkout to match the cart.
+             * a different country in the checkout. Here the cart has been updated to reflect the VAT of the selected country. 
+             * Here we update the checkout to match the cart
              */
             $cartCurrency = new Currency($cart->id_currency);
 
@@ -186,7 +200,7 @@ class PaysonCheckout2ValidationModuleFrontController extends ModuleFrontControll
             PaysonCheckout2::paysonAddLog('Updated checkout to match cart.');
             PaysonCheckout2::paysonAddLog('Failed validation, reload.');
             if (Tools::getIsset('validate_order')) {
-                // Validation from JS PaysonEmbeddedAddressChanged event
+                // Validation from JS PaysonEmbeddedAddressChanged event, will reload
                 $this->context->cookie->__set('validation_error', $this->module->l('Your order has been updated. Please review the order before proceeding.', 'validation'));
                 die('reload');
             }
