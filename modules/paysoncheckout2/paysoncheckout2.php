@@ -25,7 +25,7 @@ class PaysonCheckout2 extends PaymentModule
     {
         $this->name = 'paysoncheckout2';
         $this->tab = 'payments_gateways';
-        $this->version = '2.0.19';
+        $this->version = '2.0.20';
         $this->ps_versions_compliancy = array('min' => '1.6.0.14', 'max' => _PS_VERSION_);
         $this->author = 'Payson AB';
         $this->module_key = '4015ee54469de01eaa9150b76054547e';
@@ -111,7 +111,8 @@ class PaysonCheckout2 extends PaymentModule
                 Configuration::deleteByName('PAYSONCHECKOUT2_CUSTOMER_COUNTRY') == false ||
                 Configuration::deleteByName('PAYSONCHECKOUT2_STOCK_VALIDATION') == false ||
                 Configuration::deleteByName('PAYSONCHECKOUT2_SELLER_REF') == false ||
-                Configuration::deleteByName('PAYSONCHECKOUT2_CUSTOMER_TYPE') == false																 
+                Configuration::deleteByName('PAYSONCHECKOUT2_CUSTOMER_TYPE') == false ||
+                Configuration::deleteByName('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE') == false
                 
         ) {
             return false;
@@ -142,8 +143,18 @@ class PaysonCheckout2 extends PaymentModule
         if (!$this->active) {
             return;
         }
-
-        return $this->display(__FILE__, 'confirmation.tpl');
+        
+        $checkoutId = $this->context->cookie->psnCheckoutId;
+        if ($checkoutId && $checkoutId != null) {
+            $paysonApi = $this->getPaysonApiInstance();
+            $checkoutClient = new \Payson\Payments\CheckoutClient($paysonApi);
+            // Get existing checkout
+            $checkout = $checkoutClient->get(array('id' => $checkoutId));
+            PaysonCheckout2::paysonAddLog('Got existing checkout with ID: ' . $checkout['id']);
+            $this->context->smarty->assign('payson_checkout', $checkout['snippet']);
+        }
+        
+        return $this->display(__FILE__, 'payment_return.tpl');
     }
     
     public function hookHeader()
@@ -235,6 +246,7 @@ class PaysonCheckout2 extends PaymentModule
             Configuration::updateValue('PAYSONCHECKOUT2_STOCK_VALIDATION', Tools::getValue('PAYSONCHECKOUT2_STOCK_VALIDATION'));
             Configuration::updateValue('PAYSONCHECKOUT2_SELLER_REF', Tools::getValue('PAYSONCHECKOUT2_SELLER_REF'));
             Configuration::updateValue('PAYSONCHECKOUT2_CUSTOMER_TYPE', Tools::getValue('PAYSONCHECKOUT2_CUSTOMER_TYPE'));
+            Configuration::updateValue('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE', Tools::getValue('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE'));
             $saved = true;
         }
 
@@ -578,6 +590,25 @@ class PaysonCheckout2 extends PaymentModule
                         ),
                     ),
                     'desc' => $this->l('Select Yes to require customers to accept the terms and conditions'),
+                ),
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('PrestaShop confirmation page'),
+                    'name' => 'PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE',
+                    'is_bool' => true,
+                    'values' => array(
+                        array(
+                            'id' => 'ps_conf_on',
+                            'value' => 1,
+                            'label' => $this->l('Yes'),
+                        ),
+                        array(
+                            'id' => 'ps_conf_off',
+                            'value' => 0,
+                            'label' => $this->l('No'),
+                        ),
+                    ),
+                    'desc' => $this->l('Select Yes to use the default PrestaShop order confirmation page'),
                 )
             )
         );
@@ -704,6 +735,7 @@ class PaysonCheckout2 extends PaymentModule
             'PAYSONCHECKOUT2_STOCK_VALIDATION' => Tools::getValue('PAYSONCHECKOUT2_STOCK_VALIDATION', Configuration::get('PAYSONCHECKOUT2_STOCK_VALIDATION')),
             'PAYSONCHECKOUT2_SELLER_REF' => Tools::getValue('PAYSONCHECKOUT2_SELLER_REF', Configuration::get('PAYSONCHECKOUT2_SELLER_REF')),
             'PAYSONCHECKOUT2_CUSTOMER_TYPE' => Tools::getValue('PAYSONCHECKOUT2_CUSTOMER_TYPE', Configuration::get('PAYSONCHECKOUT2_CUSTOMER_TYPE')),
+            'PAYSONCHECKOUT2_CUSTOMER_TYPE' => Tools::getValue('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE', Configuration::get('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE')),
         );
     }
 

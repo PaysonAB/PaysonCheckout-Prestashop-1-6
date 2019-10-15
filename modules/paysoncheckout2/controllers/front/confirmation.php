@@ -164,11 +164,10 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
             $customer = new Customer((int) ($order->id_customer));
             
             if ((isset($this->context->cookie->alreadyLoggedIn) && $this->context->cookie->alreadyLoggedIn == null)) {
-                PaysonCheckout2::paysonAddLog('Customer was not logged in before checkout.');
                 $customer->mylogout();
             }
             
-            $this->displayConfirmation();
+            $this->displayConfirmation($cart, $customer, $order, $checkout);
         } catch (Exception $ex) {
             // Log error message
             PaysonCheckout2::paysonAddLog('Checkout error: ' . $ex->getMessage(), 2);
@@ -180,12 +179,31 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
             $this->context->smarty->assign('payson_checkout', $ex->getMessage());
 
             // Show confirmation
-            $this->displayConfirmation();
+            $this->setTemplate('payment.tpl');
         }
     }
     
-    protected function displayConfirmation()
+    protected function displayConfirmation($cart, $customer, $order, $checkout)
     {
-        $this->setTemplate('payment.tpl');
+        if (Configuration::get('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE') == 1) {
+            if (!$this->context->customer->isLogged(true)) {
+                // If it's a customer that's not logged in or a guest we need to set some values to prevent log in or order history from appearing instead of order confirmation
+                $customer->logged = 0;
+                $this->context->customer = $customer;
+                $this->context->cookie->id_customer = (int)$customer->id;
+                $this->context->cookie->customer_lastname = $customer->lastname;
+                $this->context->cookie->customer_firstname = $customer->firstname;
+                $this->context->cookie->email = $customer->email;
+            }
+            
+            // Set cookie for hookPaymentReturn to use
+            $this->context->cookie->__set('psnCheckoutId', $checkout['id']);
+            
+            Tools::redirectLink(__PS_BASE_URI__ . 'order-confirmation.php?id_cart=' . (int) $cart->id . '&id_module=' . $this->module->id . '&id_order=' . $order->id . '&key=' . $customer->secure_key);
+        } else {
+            PaysonCheckout2::paysonAddLog('Will use Payson confirmation page');
+            // Use Payson order confirmation page
+            $this->setTemplate('payment.tpl');
+        }
     }
 }

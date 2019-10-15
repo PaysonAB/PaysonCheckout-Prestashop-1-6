@@ -60,6 +60,8 @@ $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_ae7d309ee49549b45eff33f38
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_ddba74edbcd11dc77c41951e0f119af8'] = 'Välj Ja för att visa val för nyhetsbrev på One Page Checkout';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_8bf3fac6472fda8e32d888cf170353c6'] = 'Visa köpvillkor';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_b54c9905da4e495a9449d7574174a498'] = 'Kräv att kunderna godkänner butikens köpvillkor på One Page Checkout';
+$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_52ffc7228f37bb63ab5a08592fede0a1'] = 'PrestaShop orderbekräftelse';
+$_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_d0ad328b5016d84aacb12139580d9ce2'] = 'Välj ja för att använda PrestaShops standardsida för orderbekräftelse';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_0d749d8f4b039b742775cdec6ee70162'] = 'Extra lagerkontroll';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_f1183ef19f4f4572a3c7e8c4471df6be'] = 'Lagerkontroll';
 $_MODULE['<{paysoncheckout2}prestashop>paysoncheckout2_db3215c394a0eb83473875c2afc5b127'] = 'Utför extra lagerkontroll';
