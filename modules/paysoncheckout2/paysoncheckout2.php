@@ -75,6 +75,7 @@ class PaysonCheckout2 extends PaymentModule
         Configuration::updateValue('PAYSONCHECKOUT2_STOCK_VALIDATION', 1);
         Configuration::updateValue('PAYSONCHECKOUT2_SELLER_REF', 'order_id');
         Configuration::updateValue('PAYSONCHECKOUT2_CUSTOMER_TYPE', 'individual');
+        Configuration::updateValue('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE', 0);
         $this->createPaysonOrderTable();
 
         $orderStates = OrderState::getOrderStates(Configuration::get('PS_LANG_DEFAULT'));
@@ -735,7 +736,7 @@ class PaysonCheckout2 extends PaymentModule
             'PAYSONCHECKOUT2_STOCK_VALIDATION' => Tools::getValue('PAYSONCHECKOUT2_STOCK_VALIDATION', Configuration::get('PAYSONCHECKOUT2_STOCK_VALIDATION')),
             'PAYSONCHECKOUT2_SELLER_REF' => Tools::getValue('PAYSONCHECKOUT2_SELLER_REF', Configuration::get('PAYSONCHECKOUT2_SELLER_REF')),
             'PAYSONCHECKOUT2_CUSTOMER_TYPE' => Tools::getValue('PAYSONCHECKOUT2_CUSTOMER_TYPE', Configuration::get('PAYSONCHECKOUT2_CUSTOMER_TYPE')),
-            'PAYSONCHECKOUT2_CUSTOMER_TYPE' => Tools::getValue('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE', Configuration::get('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE')),
+            'PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE' => Tools::getValue('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE', Configuration::get('PAYSONCHECKOUT2_PS_CONFIRMATION_PAGE')),
         );
     }
 
