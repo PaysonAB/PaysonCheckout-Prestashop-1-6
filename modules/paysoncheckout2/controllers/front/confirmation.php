@@ -121,7 +121,7 @@ class PaysonCheckout2ConfirmationModuleFrontController extends ModuleFrontContro
                             $ref = $order->reference;
                         }
                         $checkout['merchant']['reference'] = $ref;
-                        $checkoutClient->update($checkout);
+                        //$checkoutClient->update($checkout);
                         
                         PaysonCheckout2::paysonAddLog('New order ID: ' . $newOrderId);
                     } else {
