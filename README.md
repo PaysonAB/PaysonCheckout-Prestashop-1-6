@@ -4,6 +4,7 @@
 
 Module for PrestaShop implementing Payson Checkout 2.0
 * Support PrestaShop 1.6.x
+* We unfortunately do not provide technical support for this version of the module. In order for Payson to guarantee optimal performance and support, we recommend always having the latest module version installed.
 
 ## Installation
 
